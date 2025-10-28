@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "headwater_api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "conduit",
+    "dbclients",
+    "pydantic>=2.12.3",
+    "pytest",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/headwater_api"]
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/headwater_api/py.typed"]
+
+# ── uv sources (local/editable deps) ───────────────────────────────────────────
+[tool.uv.sources]
+dbclients = { path = "../../dbclients-project", editable = true }
+conduit = { path = "../../conduit-project", editable = true }

@@ -1,0 +1,255 @@
+"""
+Main orchestrator for the Headwater Server.
+"""
+
+# FastAPI related imports
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from pathlib import Path
+from pydantic import ValidationError
+import uvicorn
+import time
+import json
+
+# Project Imports
+## Models
+from headwater_api.classes import (
+    ConduitRequest,
+    BatchRequest,
+    SyntheticDataRequest,
+    EmbeddingsRequest,
+    CuratorRequest,
+    StatusResponse,
+    PingResponse,
+    ConduitResponse,
+    BatchResponse,
+    ConduitError,
+    EmbeddingsResponse,
+    QuickEmbeddingRequest,
+    QuickEmbeddingResponse,
+    CreateCollectionRequest,
+    CreateCollectionResponse,
+    ListCollectionsRequest,
+    ListCollectionsResponse,
+    DeleteCollectionRequest,
+    DeleteCollectionResponse,
+    InsertCollectionRequest,
+    InsertCollectionResponse,
+    QueryCollectionRequest,
+    QueryCollectionResponse,
+    CuratorResponse,
+    HeadwaterServerError,
+    ErrorType,
+)
+
+
+## Services
+from headwater_server.services.conduit_service.conduit_async_service import (
+    conduit_async_service,
+)
+from headwater_server.services.conduit_service.conduit_sync_service import (
+    conduit_sync_service,
+)
+from headwater_server.services.embeddings_service.generate_embeddings_service import (
+    generate_embeddings_service,
+)
+from headwater_server.services.embeddings_service.quick_embedding_service import (
+    quick_embedding_service,
+)
+from headwater_server.services.embeddings_service.collection_services.create_collection_service import (
+    create_collection_service,
+)
+from headwater_server.services.embeddings_service.collection_services.list_collections_service import (
+    list_collections_service,
+)
+from headwater_server.services.embeddings_service.collection_services.delete_collection_service import (
+    delete_collection_service,
+)
+from headwater_server.services.embeddings_service.collection_services.query_collection_service import (
+    query_collection_service,
+)
+from headwater_server.services.curator_service.curator_service import curator_service
+from headwater_server.services.status_service.get_status import get_status_service
+from headwater_server.services.siphon_service.generate_synthetic_data import (
+    generate_synthetic_data,
+)
+
+from conduit.batch import ModelAsync, ConduitCache
+import logging
+import os
+
+# Set up logging and cache
+log_level = int(os.getenv("PYTHON_LOG_LEVEL", "2"))  # Default to INFO
+levels = {1: logging.WARNING, 2: logging.INFO, 3: logging.DEBUG}
+logging.basicConfig(
+    level=levels.get(log_level, logging.INFO), format="%(levelname)s: %(message)s"
+)
+logger = logging.getLogger(__name__)
+ModelAsync.conduit_cache = ConduitCache(name="headwater")
+
+# Record up time
+startup_time = time.time()
+
+
+# Configure server
+## Set up lifespan events
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("🚀 Headwater Server starting up...")
+    logger.info("🔥 GPU acceleration enabled for local models")
+    from conduit.sync import Model
+
+    _ = Model._odometer_registry  # Initialize to load models and GPU resource
+
+    yield
+    # Shutdown
+    logger.info("🛑 Headwater Server shutting down...")
+
+
+## Set up FastAPI app
+app = FastAPI(
+    title="Headwater API Server",
+    description="Universal content ingestion and LLM processing API with GPU acceleration",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+## Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Endpoints
+## Status endpoint
+@app.get("/status", response_model=StatusResponse)
+async def get_status():
+    return get_status_service(startup_time)
+
+
+@app.get("/ping", response_model=PingResponse)
+async def ping():
+    """Simple endpoint to check if the server is reachable."""
+    return {"message": "pong"}
+
+
+# Conduit endpoints
+@app.post("/conduit/sync", response_model=ConduitResponse | ConduitError)
+def conduit_sync(request: ConduitRequest):
+    return conduit_sync_service(request)
+
+
+@app.post("/conduit/async", response_model=BatchResponse)
+async def conduit_async(
+    batch: BatchRequest,
+) -> BatchResponse:
+    return await conduit_async_service(batch)
+
+
+
+
+# Siphon endpoint
+@app.post("/siphon/synthetic_data")
+def siphon_synthetic_data(request: SyntheticDataRequest):
+    """Generate synthetic data with structured error handling"""
+    request_id = (
+        getattr(request.state, "request_id", "unknown")
+        if hasattr(request, "state")
+        else "unknown"
+    )
+
+    logger.info(f"[{request_id}] Received synthetic data request")
+    logger.debug(f"[{request_id}] Request model: {request.model}")
+    logger.debug(f"[{request_id}] Context type: {type(request.context).__name__}")
+    logger.debug(f"[{request_id}] Context sourcetype: {request.context.sourcetype}")
+
+    try:
+        # Log the context size to detect potential issues
+        context_length = (
+            len(request.context.context) if hasattr(request.context, "context") else 0
+        )
+        logger.debug(f"[{request_id}] Context length: {context_length} characters")
+
+        # Call the service
+        result = generate_synthetic_data(request)
+
+        logger.info(f"[{request_id}] Successfully generated synthetic data")
+        logger.debug(
+            f"[{request_id}] Generated title: {result.title[:50]}..."
+            if result.title
+            else "No title"
+        )
+        logger.info(result)
+
+        return result
+
+    except ValidationError as e:
+        logger.error(f"[{request_id}] Validation error in synthetic data generation")
+
+        # Create structured error
+        error = (
+            HeadwaterServerError(
+                error_type=ErrorType.DATA_VALIDATION,
+                message="Synthetic data validation failed",
+                status_code=422,
+                request_id=request_id,
+                validation_errors=e.errors(),
+                original_exception=str(e),
+            )
+            .add_context("context_type", type(request.context).__name__)
+            .add_context("model", request.model)
+        )
+
+        logger.error(f"[{request_id}] Error details: {error.model_dump_json()}")
+
+        raise HTTPException(status_code=422, detail=error.model_dump())
+
+    except Exception as e:
+        logger.error(f"[{request_id}] Unexpected error: {type(e).__name__}: {str(e)}")
+
+        # Create structured error
+        error = (
+            HeadwaterServerError.from_general_exception(
+                e, status_code=500, include_traceback=True
+            )
+            .add_context("request_id", request_id)
+            .add_context("context_type", type(request.context).__name__)
+            .add_context("model", request.model)
+        )
+
+        logger.error(f"[{request_id}] Full error details: {error.model_dump_json()}")
+
+        raise HTTPException(status_code=500, detail=error.model_dump())
+
+
+
+
+
+def main():
+    """Run the Uvicorn server"""
+    from headwater_server.server.logo import print_logo
+
+    watch_directory = str(Path(__file__).parent.parent.parent)
+
+    print_logo()
+
+    uvicorn.run(
+        "headwater_server.server.main:app",
+        host="0.0.0.0",
+        port=8080,
+        reload=True,
+        reload_dirs=[watch_directory],
+        log_level="info",
+    )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,22 @@
+## Phase 1: Core Rust Concepts Through Python Lens
+
+**Ownership & Borrowing**
+
+- How Rust's ownership model solves Python's reference counting/GC overhead
+- Stack vs heap allocation (contrast with Python's "everything is a reference")
+- Borrowing rules as compile-time guarantee of Python's context manager patterns
+- Move semantics vs Python's assignment behavior
+
+**Type System Fundamentals**
+
+- Rust's enum types vs Python's Union types and Optional
+- Pattern matching (`match`) as Python's `match` statement but compile-time verified
+- Struct definitions vs Python dataclasses/Pydantic models
+- Trait system vs Python's duck typing and protocols
+
+**Error Handling**
+
+- `Result<T, E>` vs Python's try/except paradigm
+- `Option<T>` vs Python's None handling
+- Propagating errors with `?` operator vs exception bubbling
+

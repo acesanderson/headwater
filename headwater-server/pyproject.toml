@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "headwater_server"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.116.1",
+    "kramer",
+    "headwater_api",
+    "psycopg2-binary>=2.9.10",
+    "pytest>=8.4.1",
+    "rich>=14.1.0",
+    "uvicorn",
+    "conduit",
+    "pytest-asyncio>=1.2.0",
+]
+
+# ── Hatchling (build) ──────────────────────────────────────────────────────────
+# Point Hatchling at the src/ package; this is the critical bit for src-layout.
+[tool.hatch.build.targets.wheel]
+packages = ["src/headwater_server"]
+sources = ["src"]
+include = ["src/headwater_server/py.typed"]
+
+# ── Pytest ─────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+addopts = "-v -s --tb=short --no-header --showlocals --pdb -x"
+log_cli = true
+log_cli_level = "INFO"
+
+# ── uv sources (local/editable deps) ───────────────────────────────────────────
+[tool.uv.sources]
+headwater_api = { path = "../headwater-api", editable = true }
+conduit = { path = "../../conduit-project", editable = true }
+kramer = { path = "../../kramer-project", editable = true }
+
+# ─ entry points ────────────────────────────────────────────────────────────────
+[project.scripts]
+headwater = "headwater_server.server.main:main"
