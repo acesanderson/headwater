@@ -1,0 +1,12 @@
+{
+  "embedding_models": [
+    "BAAI/bge-large-en-v1.5",
+    "BAAI/bge-base-en-v1.5",
+    "BAAI/bge-reranker-v2-m3",
+    "sentence-transformers/all-mpnet-base-v2",
+    "sentence-transformers/all-MiniLM-L6-v2",
+    "nomic-ai/nomic-embed-text-v1.5",
+    "intfloat/e5-large-v2",
+    "google/embeddinggemma-300m"
+  ]
+}

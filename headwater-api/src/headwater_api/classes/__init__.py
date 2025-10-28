@@ -13,9 +13,6 @@ from headwater_api.classes.embeddings_classes.requests import (
     ListCollectionsRequest,
     QueryCollectionRequest,
 )
-from headwater_api.classes.siphon_classes.requests import (
-    SyntheticDataRequest,
-)
 from headwater_api.classes.curator_classes.requests import (
     CuratorRequest,
 )
@@ -41,9 +38,6 @@ from headwater_api.classes.curator_classes.responses import (
     CuratorResponse,
     CuratorResult,
 )
-from headwater_api.classes.siphon_classes.responses import (
-    SyntheticData,
-)
 
 # Server
 from headwater_api.classes.server_classes.exceptions import (
@@ -54,13 +48,14 @@ from headwater_api.classes.server_classes.exceptions import (
 from headwater_api.classes.server_classes.status import StatusResponse, PingResponse
 
 # Configs
-from headwater_api.classes.siphon_classes.embedding_models import load_embedding_models
+from headwater_api.classes.embeddings_classes.embedding_models import (
+    load_embedding_models,
+)
 
 __all__ = [
     # Requests
     "ConduitRequest",
     "BatchRequest",
-    "SyntheticDataRequest",
     "CuratorRequest",
     "ChromaBatch",
     "EmbeddingsRequest",
@@ -75,7 +70,6 @@ __all__ = [
     "ConduitResponse",
     "BatchResponse",
     "ConduitError",
-    "SyntheticData",
     "CuratorResponse",
     "CuratorResult",
     "EmbeddingsResponse",
