@@ -1,0 +1,11 @@
+from fastapi import FastAPI
+
+
+class HeadwaterServerAPI:
+    def __init__(self, app: FastAPI):
+        self.app: FastAPI = app
+
+    def register_routes(self):
+        """
+        Register all conduit routes
+        """
