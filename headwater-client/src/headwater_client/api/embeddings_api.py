@@ -2,7 +2,7 @@
 Client for interacting with the Curator service.
 """
 
-from headwater_api.api.base_api import BaseAPI
+from headwater_client.api.base_api import BaseAPI
 from headwater_api.classes import (
     EmbeddingsRequest,
     EmbeddingsResponse,
