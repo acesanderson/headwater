@@ -179,7 +179,6 @@ class HeadwaterTransport:
         """
         method = "GET"
         endpoints = "/status"
-        json_payload = None
         response = self._session.request(
             method=method,
             url=urljoin(self.base_url, endpoints.lstrip("/")),
@@ -189,3 +188,18 @@ class HeadwaterTransport:
         response.raise_for_status()
         status_response = StatusResponse(**response.json())
         return status_response
+
+    def list_routes(self) -> dict:
+        """
+        List all available routes on the server. (GET /routes)
+        """
+        method = "GET"
+        endpoints = "/routes"
+        response = self._session.request(
+            method=method,
+            url=urljoin(self.base_url, endpoints.lstrip("/")),
+            headers={},
+            data=None,
+        )
+        response.raise_for_status()
+        return response.json()

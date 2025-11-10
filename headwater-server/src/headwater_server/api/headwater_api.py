@@ -25,3 +25,20 @@ class HeadwaterServerAPI:
             )
 
             return get_status_service(startup_time)
+
+        @self.app.get("/routes")
+        def list_routes():
+            """
+            Return all active endpoints with their HTTP methods.
+            """
+            route_info: list[dict[str, list[str] | str]] = []
+            for route in self.app.routes:
+                if hasattr(route, "methods"):
+                    route_info.append(
+                        {
+                            "path": route.path,
+                            "methods": list(route.methods),
+                            "name": route.name,
+                        }
+                    )
+            return route_info

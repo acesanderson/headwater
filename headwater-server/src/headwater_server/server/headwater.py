@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from headwater_server.api.conduit_server_api import ConduitServerAPI
 from headwater_server.api.embeddings_server_api import EmbeddingsServerAPI
 from headwater_server.api.curator_server_api import CuratorServerAPI
+from headwater_server.api.siphon_server_api import SiphonServerAPI
 from headwater_server.api.headwater_api import HeadwaterServerAPI
 
 import logging
@@ -44,6 +45,7 @@ class HeadwaterServer:
         ConduitServerAPI(self.app).register_routes()
         EmbeddingsServerAPI(self.app).register_routes()
         CuratorServerAPI(self.app).register_routes()
+        SiphonServerAPI(self.app).register_routes()
         HeadwaterServerAPI(self.app).register_routes()
 
     def _register_middleware(self):

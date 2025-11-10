@@ -14,6 +14,8 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "pytest>=8.4.1",
     "rich>=14.1.0",
+    "siphon_api",
+    "siphon_server",
     "uvicorn",
     "conduit",
     "pytest-asyncio>=1.2.0",
@@ -35,6 +37,8 @@ log_cli_level = "INFO"
 # ── uv sources (local/editable deps) ───────────────────────────────────────────
 [tool.uv.sources]
 headwater_api = { path = "../headwater-api", editable = true }
+siphon_api = { path = "../../siphon/siphon-api", editable = true }
+siphon_server = { path = "../../siphon/siphon-server", editable = true }
 conduit = { path = "../../conduit-project", editable = true }
 kramer = { path = "../../kramer-project", editable = true }
 

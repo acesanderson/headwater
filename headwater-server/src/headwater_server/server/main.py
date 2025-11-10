@@ -1,11 +1,9 @@
 def main():
     from headwater_server.server.logo import print_logo
-    from headwater_server.server.headwater import HeadwaterServer
     from pathlib import Path
     import uvicorn
 
     print_logo()
-    server = HeadwaterServer()
 
     uvicorn.run(
         "headwater_server.server.headwater:app",

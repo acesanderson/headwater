@@ -31,3 +31,7 @@ class HeadwaterClient:
     def get_status(self) -> StatusResponse:
         """Get the status of the Headwater service."""
         return self._transport.get_status()
+
+    def list_routes(self) -> list[dict]:
+        """List available API routes."""
+        return self._transport.list_routes()
