@@ -7,8 +7,9 @@ name = "headwater_client"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "headwater_api",
     "dbclients",
+    "headwater_api",
+    "siphon_api",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -22,3 +23,4 @@ include = ["src/headwater_client/py.typed"]
 [tool.uv.sources]
 dbclients = { path = "../../dbclients-project", editable = true }
 headwater_api = { path = "../headwater-api", editable = true }
+siphon_api = { path = "../../siphon/siphon-api", editable = true }
