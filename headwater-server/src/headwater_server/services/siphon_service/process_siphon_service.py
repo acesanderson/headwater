@@ -12,8 +12,10 @@ def process_siphon_service(request: SiphonRequest) -> ProcessedContent:
             with ensure_temp_file(request) as file_path:
                 pipeline = SiphonPipeline()
                 processed_content = pipeline.process(str(file_path))
-                return processed_content
+            # With temp file having served its purpose, reassign the original request path
+            processed_content.source.original_source = request.source
+            return processed_content
         case SourceOrigin.URL:
             pipeline = SiphonPipeline()
-            processed_content = pipeline.process(request.url)
+            processed_content = pipeline.process(request.source)
             return processed_content
