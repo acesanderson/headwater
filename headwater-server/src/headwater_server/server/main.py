@@ -1,17 +1,7 @@
-import logging
-import os
-from rich.logging import RichHandler
+import headwater_server.server.logging_config
 
-# Set up Rich logging
-log_level = int(os.getenv("PYTHON_LOG_LEVEL", "2"))  # Default to INFO
-levels = {1: logging.WARNING, 2: logging.INFO, 3: logging.DEBUG}
-logging.basicConfig(
-    level=levels.get(log_level, logging.INFO),
-    format="%(message)s",  # Let Rich handle layout (time, level, filename)
-    datefmt="%Y-%m-%d %H:%M",
-    handlers=[RichHandler(rich_tracebacks=True, markup=True)],
-)
-logger = logging.getLogger(__name__)
+# To comfort my IDE
+_ = headwater_server.server.logging_config
 
 
 def main():
@@ -27,6 +17,7 @@ def main():
         port=8080,
         reload=True,
         reload_dirs=[str(Path(__file__).parent.parent.parent)],
+        log_config=None,
         log_level="info",
     )
 
