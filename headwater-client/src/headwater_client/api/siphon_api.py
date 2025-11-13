@@ -4,11 +4,11 @@ Client for interacting with the Siphon service.
 
 from headwater_client.api.base_api import BaseAPI
 from siphon_api.api.siphon_request import SiphonRequest
-from siphon_api.models import ProcessedContent
+from siphon_api.api.siphon_response import SiphonResponse
 
 
 class SiphonAPI(BaseAPI):
-    def process(self, request: SiphonRequest) -> ProcessedContent:
+    def process(self, request: SiphonRequest) -> SiphonResponse:
         """
         Process content through the Siphon service and return structured results.
         """
@@ -17,8 +17,8 @@ class SiphonAPI(BaseAPI):
         json_payload = request.model_dump_json()
         response = self._request(method, endpoint, json_payload=json_payload)
         try:
-            return ProcessedContent.model_validate_json(response)
+            return SiphonResponse.model_validate_json(response)
         except Exception as e:
             raise ValueError(
-                "Response could not be validated as ProcessedContent."
+                "Response could not be validated as SiphonResponse."
             ) from e
