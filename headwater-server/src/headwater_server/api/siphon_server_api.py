@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from siphon_api.api.siphon_request import SiphonRequest
-from siphon_api.models import ProcessedContent
+from siphon_api.api.siphon_response import SiphonResponse
 
 
 class SiphonServerAPI:
@@ -12,7 +12,7 @@ class SiphonServerAPI:
         Register all Siphon routes.
         """
 
-        @self.app.post("/siphon/process", response_model=ProcessedContent)
+        @self.app.post("/siphon/process", response_model=SiphonResponse)
         def process_siphon(request: SiphonRequest):
             """
             Curate items based on the provided request
