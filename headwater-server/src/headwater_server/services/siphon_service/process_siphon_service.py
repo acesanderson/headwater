@@ -5,7 +5,7 @@ from siphon_api.models import (
     ProcessedContent,
     PipelineClass,
 )
-from siphon_api.enums import SourceOrigin
+from siphon_api.enums import SourceOrigin, ActionType
 from siphon_api.api.from_siphon_request import ensure_temp_file
 from siphon_server.core.pipeline import SiphonPipeline
 
@@ -19,7 +19,7 @@ def process_siphon_service(request: SiphonRequest) -> SiphonResponse:
     """
     source_origin: SourceOrigin = request.origin
     use_cache = request.params.use_cache
-    action = request.params.action
+    action: ActionType = request.params.action
     match source_origin:
         case SourceOrigin.FILE_PATH:
             with ensure_temp_file(request) as file_path:
