@@ -7,7 +7,7 @@ from siphon_server.core.pipeline import SiphonPipeline
 
 def process_siphon_service(request: SiphonRequest) -> ProcessedContent:
     source_origin: SourceOrigin = request.origin
-    use_cache = request.use_cache
+    use_cache = request.params.use_cache
     match source_origin:
         case SourceOrigin.FILE_PATH:
             with ensure_temp_file(request) as file_path:
