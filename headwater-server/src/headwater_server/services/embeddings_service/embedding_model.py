@@ -1,22 +1,61 @@
 import json
 from pathlib import Path
 from headwater_api.classes import ChromaBatch, load_embedding_models
+from typing import Protocol
 
 _DEVICE_CACHE = None
 EMBEDDING_MODELS_FILE = Path(__file__).parent / "embedding_models.json"
 
 
+class EmbeddingFunction(Protocol):
+    """
+    A protocol for embedding functions; matches Chroma's expected signature.
+    """
+
+    def __call__(self, documents: list[str]) -> list[list[float]]: ...
+
+
 class EmbeddingModel:
     def __init__(self, model_name: str):
-        from transformers import AutoModel, AutoTokenizer
-
-        self.model_name = model_name
+        self.model_name: str = model_name
         if model_name not in self.models():
             raise ValueError(
                 f"Model '{model_name}' is not in the list of supported models."
             )
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self.model = AutoModel.from_pretrained(self.model_name).to(self.device())
+        self.embedding_function: EmbeddingFunction = self.get_embedding_function(
+            model_name
+        )
+
+    def get_embedding_function(self, model_name: str) -> EmbeddingFunction:
+        """
+        Get the embedding function for the specified model.
+        For now this is just huggingface transformers models; in the future we may add cloud APIs or other interfaces.
+        """
+
+        def hugging_face_embedding_function(documents: list[str]) -> list[list[float]]:
+            from transformers import AutoModel, AutoTokenizer
+            import torch
+
+            tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            model = AutoModel.from_pretrained(self.model_name).to(self.device())
+
+            inputs = self.tokenizer(
+                documents, padding=True, truncation=True, return_tensors="pt"
+            )
+            inputs = {k: v.to(self.device()) for k, v in inputs.items()}
+
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                embeddings = outputs.last_hidden_state.mean(dim=1).cpu().tolist()
+            return embeddings
+
+        def openai_embedding_function(documents: list[str]) -> list[list[float]]: ...
+
+        def google_embedding_function(documents: list[str]) -> list[list[float]]: ...
+
+        def cohere_embedding_function(documents: list[str]) -> list[list[float]]: ...
+
+        return hugging_face_embedding_function
 
     @classmethod
     def models(cls) -> list[str]:
@@ -41,21 +80,13 @@ class EmbeddingModel:
     def generate_embeddings(self, batch: ChromaBatch) -> ChromaBatch:
         """
         Generate embeddings for a batch of documents.
+
         Args:
             batch (ChromaBatch): A batch of ids and documents to generate embeddings for.
         Returns:
             ChromaBatch: A new batch the original ids and documents, as well as generated embeddings.
         """
-        import torch
-
-        inputs = self.tokenizer(
-            batch.documents, padding=True, truncation=True, return_tensors="pt"
-        )
-        inputs = {k: v.to(self.device()) for k, v in inputs.items()}
-
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            embeddings = outputs.last_hidden_state.mean(dim=1).cpu().tolist()
+        embeddings = self.embedding_function(batch.documents)
 
         new_batch = ChromaBatch(
             ids=batch.ids,
@@ -65,14 +96,17 @@ class EmbeddingModel:
         )
         return new_batch
 
-
-if __name__ == "__main__":
-    # Example usage
-    model = EmbeddingModel("sentence-transformers/all-mpnet-base-v2")
-    batch = ChromaBatch(
-        ids=["1", "2"],
-        documents=["This is a test document.", "This is another test document."],
-        metadatas=[{}, {}],
-    )
-    embedded_batch = model.generate_embeddings(batch)
-    print(embedded_batch.embeddings)
+    def generate_embedding(self, document: str) -> list[float]:
+        """
+        Generate an embedding for a single document.
+        Wraps generate_embeddings for convenience.
+        """
+        batch = ChromaBatch(
+            ids=["0"],
+            documents=[document],
+            metadatas=[{}],
+        )
+        embedded_batch = self.generate_embeddings(batch)
+        if not embedded_batch.embeddings:
+            raise ValueError("No embeddings were generated.")
+        return embedded_batch.embeddings[0]

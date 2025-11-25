@@ -10,12 +10,10 @@ from headwater_api.classes import (
     QuickEmbeddingResponse,
     CreateCollectionRequest,
     CreateCollectionResponse,
-    ListCollectionsRequest,
-    ListCollectionsResponse,
+    GetCollectionRequest,
+    CollectionRecord,
     DeleteCollectionRequest,
     DeleteCollectionResponse,
-    InsertCollectionRequest,
-    InsertCollectionResponse,
     QueryCollectionRequest,
     QueryCollectionResponse,
 )
@@ -48,25 +46,29 @@ class EmbeddingsAPI(BaseAPI):
         response = self._request(method, endpoint, json_payload=json_payload)
         return response
 
-    # def quick_embedding(
-    #     self,
-    #     request: QuickEmbeddingRequest,
-    # ) -> QuickEmbeddingResponse:
-    #     """
-    #     Generate quick embeddings using the server.
-    #     """
-    #     method = "POST"
-    #     endpoint = "/conduit/embeddings/quick"
-    #     json_payload = request.model_dump_json()
-    #     response = self._request(method, endpoint, json_payload=json_payload)
-    #     return QuickEmbeddingResponse.model_validate_json(response)
-    #
-    # # Embedding Collections API methods
-    # def create_collection(
-    #     self,
-    #     request: CreateCollectionRequest,
-    # ) -> CreateCollectionResponse:
-    #     """
+    def quick_embedding(
+        self,
+        request: QuickEmbeddingRequest,
+    ) -> QuickEmbeddingResponse:
+        """
+        Generate quick embeddings using the server.
+        """
+        method = "POST"
+        endpoint = "/conduit/embeddings/quick"
+        json_payload = request.model_dump_json()
+        response = self._request(method, endpoint, json_payload=json_payload)
+        return QuickEmbeddingResponse.model_validate_json(response)
+
+    def get_collection(self, request: GetCollectionRequest) -> CollectionRecord:
+        """
+        Get an embedding collection by name.
+        """
+        method = "POST"
+        endpoint = "/embeddings/collections/get"
+        json_payload = request.model_dump_json()
+        response = self._request(method, endpoint, json_payload=json_payload)
+        return CollectionRecord.model_validate_json(response)
+
     #     Create a new embedding collection.
     #     """
     #     method = "POST"

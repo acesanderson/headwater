@@ -6,7 +6,7 @@ from headwater_api.classes import (
     QuickEmbeddingResponse,
     CreateCollectionRequest,
     CreateCollectionResponse,
-    ListCollectionsResponse,
+    CollectionRecord,
     DeleteCollectionRequest,
     DeleteCollectionResponse,
     QueryCollectionRequest,
@@ -41,16 +41,31 @@ class EmbeddingsServerAPI:
 
             return await list_embedding_models_service()
 
-        # @self.app.post(
-        #     "/conduit/embeddings/quick", response_model=QuickEmbeddingResponse
-        # )
-        # def quick_embedding(request: QuickEmbeddingRequest) -> QuickEmbeddingResponse:
-        #     from headwater_server.services.embeddings_service.quick_embedding_service import (
-        #         quick_embedding_service,
-        #     )
-        #
-        #     return quick_embedding_service(request)
-        #
+        @self.app.post(
+            "/conduit/embeddings/quick", response_model=QuickEmbeddingResponse
+        )
+        async def quick_embedding(
+            request: QuickEmbeddingRequest,
+        ) -> QuickEmbeddingResponse:
+            from headwater_server.services.embeddings_service.quick_embedding_service import (
+                quick_embedding_service,
+            )
+
+            return quick_embedding_service(request)
+
+        # Get Collection
+
+        @self.app.post(
+            "/conduit/embeddings/collections/get",
+            response_model=CollectionRecord,
+        )
+        async def get_collection(request: GetCollectionRequest) -> CollectionRecord:
+            from headwater_server.services.embeddings_service.get_collection_service import (
+                get_collection_service,
+            )
+
+            return get_collection_service(request)
+
         # # Collections
         # @self.app.post(
         #     "/conduit/embeddings/collections", response_model=CreateCollectionResponse
@@ -63,17 +78,15 @@ class EmbeddingsServerAPI:
         #     )
         #
         #     return create_collection_service(request)
-        #
-        # @self.app.get(
-        #     "/conduit/embeddings/collections", response_model=ListCollectionsResponse
-        # )
-        # def list_collections() -> ListCollectionsResponse:
-        #     from headwater_server.services.embeddings_service.list_collections_service import (
-        #         list_collections_service,
-        #     )
-        #
-        #     return list_collections_service()
-        #
+
+        @self.app.get("/conduit/embeddings/collections")
+        def list_collections() -> list[str]:
+            from headwater_server.services.embeddings_service.list_collections_service import (
+                list_collections_service,
+            )
+
+            return list_collections_service()
+
         # @self.app.delete(
         #     "/conduit/embeddings/collections", response_model=DeleteCollectionResponse
         # )

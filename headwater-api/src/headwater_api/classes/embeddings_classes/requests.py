@@ -43,14 +43,22 @@ class QuickEmbeddingRequest(BaseModel):
 
 
 # Collection Operations
-class CreateCollectionRequest(BaseModel):
-    name: str = Field(
-        ...,
-        description="The name of the collection to create.",
+class GetCollectionRequest(BaseModel):
+    """
+    Returns CollectionRecord for the specified collection name.
+    """
+
+    collection_name: str = Field(
+        ..., description="The name of the collection to retrieve."
     )
-    model: str = Field(
-        ...,
-        description="The embedding model to use for the collection.",
+
+
+class CreateCollectionRequest(BaseModel):
+    collection_name: str = Field(
+        ..., description="The name of the collection to create."
+    )
+    embedding_model: str = Field(
+        ..., description="The embedding model to use for the collection."
     )
     metadata: dict[str, Any] | None = Field(
         default=None,
@@ -59,28 +67,9 @@ class CreateCollectionRequest(BaseModel):
 
 
 class DeleteCollectionRequest(BaseModel):
-    name: str = Field(
-        ...,
-        description="The name of the collection to delete.",
+    collection_name: str = Field(
+        ..., description="The name of the collection to delete."
     )
-
-
-class InsertCollectionRequest(BaseModel):
-    name: str = Field(
-        ...,
-        description="The name of the collection to insert into.",
-    )
-    model: str = Field(
-        ...,
-        description="The embedding model to use for the insertion.",
-    )
-    batch: ChromaBatch = Field(
-        ...,
-        description="Batch of documents to insert into the collection.",
-    )
-
-
-class ListCollectionsRequest(BaseModel): ...
 
 
 class QueryCollectionRequest(BaseModel):
@@ -123,7 +112,5 @@ __all__ = [
     "QuickEmbeddingRequest",
     "CreateCollectionRequest",
     "DeleteCollectionRequest",
-    "InsertCollectionRequest",
-    "ListCollectionsRequest",
     "QueryCollectionRequest",
 ]

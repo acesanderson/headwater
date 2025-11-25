@@ -1,5 +1,6 @@
 from typing import Literal
 from pydantic import BaseModel, Field
+from typing import Any
 
 
 # Embeddings
@@ -29,8 +30,9 @@ class CollectionRecord(BaseModel):
 
 
 class CreateCollectionResponse(BaseModel):
-    collection: CollectionRecord = Field(
-        ..., description="Details of the created collection"
+    collection_name: str = Field(..., description="The name of the created collection.")
+    embedding_model: str = Field(
+        ..., description="The embedding model used for the collection."
     )
     result: Literal["already_exists", "created"] = Field(
         ..., description="Result of the create operation"
@@ -38,33 +40,28 @@ class CreateCollectionResponse(BaseModel):
 
 
 class DeleteCollectionResponse(BaseModel):
-    collection: CollectionRecord = Field(
-        ..., description="Details of the deleted collection"
+    collection_name: str = Field(
+        ..., description="The name of the collection to delete."
     )
     result: Literal["not_found", "deleted"] = Field(
         ..., description="Result of the delete operation"
     )
 
 
-class InsertCollectionResponse(BaseModel):
-    collection: CollectionRecord = Field(..., description="Details of the collection")
-    result: Literal["collection_not_found", "inserted"] = Field(
-        ..., description="Result of the insert operation"
+class QueryCollectionResult(BaseModel):
+    id: str = Field(..., description="The ID of the document.")
+    document: str = Field(..., description="The content of the document.")
+    metadata: dict[str, Any] = Field(
+        ..., description="The metadata associated with the document."
     )
-    inserted_count: int = Field(..., description="Number of documents inserted")
-
-
-class ListCollectionsResponse(BaseModel):
-    collections: list[CollectionRecord] = Field(
-        ..., description="List of collection names"
-    )
+    score: float = Field(..., description="The similarity score of the document.")
 
 
 class QueryCollectionResponse(BaseModel):
-    query: str = Field(..., description="The query string used for searching")
-    ids: list[str] = Field(..., description="List of matching document IDs")
-    documents: list[str] = Field(..., description="List of matching documents")
-    distances: list[float] = Field(..., description="List of distances for each match")
+    query: str = Field(..., description="The query string used for the search.")
+    results: list[QueryCollectionResult] = Field(
+        ..., description="The list of results returned from the query."
+    )
 
 
 __all__ = [
@@ -73,7 +70,6 @@ __all__ = [
     "CollectionRecord",
     "CreateCollectionResponse",
     "DeleteCollectionResponse",
-    "InsertCollectionResponse",
-    "ListCollectionResponse",
+    "QueryCollectionResult",
     "QueryCollectionResponse",
 ]
