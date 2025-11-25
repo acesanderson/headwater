@@ -37,7 +37,7 @@ class QuickEmbeddingRequest(BaseModel):
         description="The text query to generate an embedding for.",
     )
     model: str = Field(
-        ...,
+        default="sentence-transformers/all-MiniLM-L6-v2",
         description="The embedding model to use for generating embeddings.",
     )
 

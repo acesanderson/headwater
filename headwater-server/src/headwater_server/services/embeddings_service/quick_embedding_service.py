@@ -4,7 +4,9 @@ from headwater_api.classes import QuickEmbeddingRequest, QuickEmbeddingResponse
 def quick_embedding_service(
     request: QuickEmbeddingRequest,
 ) -> QuickEmbeddingResponse:
-    from embedding_model import EmbeddingModel
+    from headwater_server.services.embeddings_service.embedding_model import (
+        EmbeddingModel,
+    )
 
     query = request.query
     model = request.model

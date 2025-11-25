@@ -19,13 +19,21 @@ class QuickEmbeddingResponse(BaseModel):
 # Collection Operations
 class CollectionRecord(BaseModel):
     name: str = Field(..., description="Name of the collection")
-    model: str = Field(..., description="Embedding model used for the collection")
     no_of_ids: int = Field(..., description="Number of unique IDs in the collection")
     no_of_documents: int = Field(
         ..., description="Number of documents in the collection"
     )
+    model: str | None = Field(
+        ..., description="Embedding model used for the collection"
+    )
     metadata: dict[str, str] | None = Field(
         default=None, description="Optional metadata for the collection"
+    )
+
+
+class ListCollectionsResponse(BaseModel):
+    collections: list[CollectionRecord] = Field(
+        ..., description="List of collections available"
     )
 
 

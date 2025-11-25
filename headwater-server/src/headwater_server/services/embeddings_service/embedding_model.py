@@ -36,16 +36,16 @@ class EmbeddingModel:
             from transformers import AutoModel, AutoTokenizer
             import torch
 
-            tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            model = AutoModel.from_pretrained(self.model_name).to(self.device())
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            model = AutoModel.from_pretrained(model_name).to(self.device())
 
-            inputs = self.tokenizer(
+            inputs = tokenizer(
                 documents, padding=True, truncation=True, return_tensors="pt"
             )
             inputs = {k: v.to(self.device()) for k, v in inputs.items()}
 
             with torch.no_grad():
-                outputs = self.model(**inputs)
+                outputs = model(**inputs)
                 embeddings = outputs.last_hidden_state.mean(dim=1).cpu().tolist()
             return embeddings
 

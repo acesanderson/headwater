@@ -26,9 +26,11 @@ from headwater_api.classes.embeddings_classes.responses import (
     EmbeddingsResponse,
     QuickEmbeddingResponse,
     CollectionRecord,
+    ListCollectionsResponse,
     CreateCollectionResponse,
     DeleteCollectionResponse,
     QueryCollectionResponse,
+    QueryCollectionResult,
 )
 
 from headwater_api.classes.curator_classes.responses import (
@@ -70,9 +72,11 @@ __all__ = [
     "CuratorResult",
     "EmbeddingsResponse",
     "QuickEmbeddingResponse",
+    "ListCollectionsResponse",
     "CreateCollectionResponse",
     "DeleteCollectionResponse",
     "CollectionRecord",
+    "QueryCollectionResult",
     "QueryCollectionResponse",
     # Server
     "HeadwaterServerError",

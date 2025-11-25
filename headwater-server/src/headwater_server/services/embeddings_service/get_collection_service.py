@@ -3,7 +3,6 @@ from headwater_api.classes import (
     CollectionRecord,
 )
 from dbclients.clients.chroma import get_client
-from typing import Any
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,16 +17,16 @@ async def get_collection_service(request: GetCollectionRequest) -> CollectionRec
 
     client = await get_client()
     collection = await client.get_collection(name=request.collection_name)
-    name = collection.name
-    metadata = collection.metadata
-    model = metadata.get("embedding_model", "unknown")
-    no_of_ids = collection.count()
-    no_of_documents = collection.count()
-
+    metadata = getattr(client, "metadata", {})
+    if metadata:
+        model = metadata.get("embedding_model", None)
+    else:
+        model = None
+    count = await collection.count()
     return CollectionRecord(
         name=collection.name,
-        model=model,
-        no_of_ids=no_of_ids,
-        no_of_documents=no_of_documents,
         metadata=metadata,
+        model=model,
+        no_of_ids=count,
+        no_of_documents=count,
     )

@@ -12,6 +12,7 @@ from headwater_api.classes import (
     CreateCollectionResponse,
     GetCollectionRequest,
     CollectionRecord,
+    ListCollectionsResponse,
     DeleteCollectionRequest,
     DeleteCollectionResponse,
     QueryCollectionRequest,
@@ -64,10 +65,34 @@ class EmbeddingsAPI(BaseAPI):
         Get an embedding collection by name.
         """
         method = "POST"
-        endpoint = "/embeddings/collections/get"
+        endpoint = "/conduit/embeddings/collections/get"
         json_payload = request.model_dump_json()
         response = self._request(method, endpoint, json_payload=json_payload)
         return CollectionRecord.model_validate_json(response)
+
+    def list_collections(
+        self,
+    ) -> ListCollectionsResponse:
+        """
+        List all embedding collections.
+        """
+        method = "GET"
+        endpoint = "/conduit/embeddings/collections"
+        response = self._request(method, endpoint)
+        return ListCollectionsResponse.model_validate_json(response)
+
+    def query_collection(
+        self,
+        request: QueryCollectionRequest,
+    ) -> QueryCollectionResponse:
+        """
+        Query embeddings from a collection.
+        """
+        method = "POST"
+        endpoint = "/conduit/embeddings/collections/query"
+        json_payload = request.model_dump_json()
+        response = self._request(method, endpoint, json_payload=json_payload)
+        return QueryCollectionResponse.model_validate_json(response)
 
     #     Create a new embedding collection.
     #     """
@@ -76,19 +101,6 @@ class EmbeddingsAPI(BaseAPI):
     #     json_payload = request.model_dump_json()
     #     response = self._request(method, endpoint, json_payload=json_payload)
     #     return CreateCollectionResponse.model_validate_json(response)
-    #
-    # def list_collections(
-    #     self,
-    #     request: ListCollectionsRequest,
-    # ) -> ListCollectionsResponse:
-    #     """
-    #     List all embedding collections.
-    #     """
-    #     method = "GET"
-    #     endpoint = "/embeddings/collections"
-    #     response = self._request(method, endpoint)
-    #     return ListCollectionsResponse.model_validate_json(response)
-    #
     # def delete_collection(
     #     self,
     #     request: DeleteCollectionRequest,
@@ -114,15 +126,3 @@ class EmbeddingsAPI(BaseAPI):
     #     response = self._request(method, endpoint, json_payload=json_payload)
     #     return InsertCollectionResponse.model_validate_json(response)
     #
-    # def query_collection(
-    #     self,
-    #     request: QueryCollectionRequest,
-    # ) -> QueryCollectionResponse:
-    #     """
-    #     Query embeddings from a collection.
-    #     """
-    #     method = "POST"
-    #     endpoint = f"/embeddings/collections/{request.name}/query"
-    #     json_payload = request.model_dump_json()
-    #     response = self._request(method, endpoint, json_payload=json_payload)
-    #     return QueryCollectionResponse.model_validate_json(response)
