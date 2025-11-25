@@ -10,9 +10,14 @@ class BaseAPI:
     def __init__(self, transport: HeadwaterTransport):
         self._transport = transport
 
-    def _request(self, method: str, endpoint: str, json_payload: str) -> str:
+    def _request(
+        self, method: str, endpoint: str, json_payload: str | None = None
+    ) -> str:
         """
         Internal method to send requests via the transport layer.
         Flattens the interface for subclasses while still allowing for composition.
         """
-        return self._transport._request(method, endpoint, json_payload=json_payload)
+        if method.upper() == "GET":
+            return self._transport._request(method, endpoint)
+        elif method.upper() in ["POST", "PUT", "DELETE", "PATCH"]:
+            return self._transport._request(method, endpoint, json_payload=json_payload)

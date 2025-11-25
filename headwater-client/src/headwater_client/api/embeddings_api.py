@@ -36,79 +36,91 @@ class EmbeddingsAPI(BaseAPI):
         response = self._request(method, endpoint, json_payload=json_payload)
         return EmbeddingsResponse.model_validate_json(response)
 
-    def quick_embedding(
+    def list_embedding_models(
         self,
-        request: QuickEmbeddingRequest,
-    ) -> QuickEmbeddingResponse:
+    ) -> list[str]:
         """
-        Generate quick embeddings using the server.
-        """
-        method = "POST"
-        endpoint = "/conduit/embeddings/quick"
-        json_payload = request.model_dump_json()
-        response = self._request(method, endpoint, json_payload=json_payload)
-        return QuickEmbeddingResponse.model_validate_json(response)
-
-    # Embedding Collections API methods
-    def create_collection(
-        self,
-        request: CreateCollectionRequest,
-    ) -> CreateCollectionResponse:
-        """
-        Create a new embedding collection.
-        """
-        method = "POST"
-        endpoint = "/embeddings/collections"
-        json_payload = request.model_dump_json()
-        response = self._request(method, endpoint, json_payload=json_payload)
-        return CreateCollectionResponse.model_validate_json(response)
-
-    def list_collections(
-        self,
-        request: ListCollectionsRequest,
-    ) -> ListCollectionsResponse:
-        """
-        List all embedding collections.
+        List available embedding models from the server.
         """
         method = "GET"
-        endpoint = "/embeddings/collections"
-        response = self._request(method, endpoint)
-        return ListCollectionsResponse.model_validate_json(response)
-
-    def delete_collection(
-        self,
-        request: DeleteCollectionRequest,
-    ) -> DeleteCollectionResponse:
-        """
-        Delete an embedding collection.
-        """
-        method = "DELETE"
-        endpoint = f"/embeddings/collections/{request.name}"
-        response = self._request(method, endpoint)
-        return DeleteCollectionResponse.model_validate_json(response)
-
-    def insert_into_collection(
-        self,
-        request: InsertCollectionRequest,
-    ) -> InsertCollectionResponse:
-        """
-        Insert embeddings into a collection.
-        """
-        method = "POST"
-        endpoint = f"/embeddings/collections/{request.name}/insert"
-        json_payload = request.model_dump_json()
+        endpoint = "/conduit/embeddings/models"
+        json_payload = None
         response = self._request(method, endpoint, json_payload=json_payload)
-        return InsertCollectionResponse.model_validate_json(response)
+        return response
 
-    def query_collection(
-        self,
-        request: QueryCollectionRequest,
-    ) -> QueryCollectionResponse:
-        """
-        Query embeddings from a collection.
-        """
-        method = "POST"
-        endpoint = f"/embeddings/collections/{request.name}/query"
-        json_payload = request.model_dump_json()
-        response = self._request(method, endpoint, json_payload=json_payload)
-        return QueryCollectionResponse.model_validate_json(response)
+    # def quick_embedding(
+    #     self,
+    #     request: QuickEmbeddingRequest,
+    # ) -> QuickEmbeddingResponse:
+    #     """
+    #     Generate quick embeddings using the server.
+    #     """
+    #     method = "POST"
+    #     endpoint = "/conduit/embeddings/quick"
+    #     json_payload = request.model_dump_json()
+    #     response = self._request(method, endpoint, json_payload=json_payload)
+    #     return QuickEmbeddingResponse.model_validate_json(response)
+    #
+    # # Embedding Collections API methods
+    # def create_collection(
+    #     self,
+    #     request: CreateCollectionRequest,
+    # ) -> CreateCollectionResponse:
+    #     """
+    #     Create a new embedding collection.
+    #     """
+    #     method = "POST"
+    #     endpoint = "/embeddings/collections"
+    #     json_payload = request.model_dump_json()
+    #     response = self._request(method, endpoint, json_payload=json_payload)
+    #     return CreateCollectionResponse.model_validate_json(response)
+    #
+    # def list_collections(
+    #     self,
+    #     request: ListCollectionsRequest,
+    # ) -> ListCollectionsResponse:
+    #     """
+    #     List all embedding collections.
+    #     """
+    #     method = "GET"
+    #     endpoint = "/embeddings/collections"
+    #     response = self._request(method, endpoint)
+    #     return ListCollectionsResponse.model_validate_json(response)
+    #
+    # def delete_collection(
+    #     self,
+    #     request: DeleteCollectionRequest,
+    # ) -> DeleteCollectionResponse:
+    #     """
+    #     Delete an embedding collection.
+    #     """
+    #     method = "DELETE"
+    #     endpoint = f"/embeddings/collections/{request.name}"
+    #     response = self._request(method, endpoint)
+    #     return DeleteCollectionResponse.model_validate_json(response)
+    #
+    # def insert_into_collection(
+    #     self,
+    #     request: InsertCollectionRequest,
+    # ) -> InsertCollectionResponse:
+    #     """
+    #     Insert embeddings into a collection.
+    #     """
+    #     method = "POST"
+    #     endpoint = f"/embeddings/collections/{request.name}/insert"
+    #     json_payload = request.model_dump_json()
+    #     response = self._request(method, endpoint, json_payload=json_payload)
+    #     return InsertCollectionResponse.model_validate_json(response)
+    #
+    # def query_collection(
+    #     self,
+    #     request: QueryCollectionRequest,
+    # ) -> QueryCollectionResponse:
+    #     """
+    #     Query embeddings from a collection.
+    #     """
+    #     method = "POST"
+    #     endpoint = f"/embeddings/collections/{request.name}/query"
+    #     json_payload = request.model_dump_json()
+    #     response = self._request(method, endpoint, json_payload=json_payload)
+    #     return QueryCollectionResponse.model_validate_json(response)
