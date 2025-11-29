@@ -1,4 +1,4 @@
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, BaseModel
 from conduit.request.request import Request as ConduitRequest
 from typing import override
 
@@ -65,7 +65,24 @@ class BatchRequest(ConduitRequest):
         return self
 
 
+class TokenizationRequest(BaseModel):
+    """
+    TokenizationRequest is used to request tokenization of a given text input
+    using a specified model's tokenizer.
+    """
+
+    model: str = Field(
+        ...,
+        description="The model whose tokenizer will be used for tokenization.",
+    )
+    text: str = Field(
+        ...,
+        description="The text input to be tokenized.",
+    )
+
+
 __all__ = [
     "ConduitRequest",
     "BatchRequest",
+    "TokenizationRequest",
 ]

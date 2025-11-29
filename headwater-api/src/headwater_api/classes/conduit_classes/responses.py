@@ -12,8 +12,17 @@ class BatchResponse(BaseModel):
     )
 
 
+class TokenizationResponse(BaseModel):
+    """Response model for tokenization requests"""
+
+    model: str = Field(..., description="The model used for tokenization")
+    input_text: str = Field(..., description="The original input text")
+    token_count: int = Field(..., description="The number of tokens in the input text")
+
+
 __all__ = [
     "BatchResponse",
     "ConduitResponse",
     "ConduitError",
+    "TokenizationResponse",
 ]

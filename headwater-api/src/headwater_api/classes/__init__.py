@@ -2,6 +2,7 @@
 from headwater_api.classes.conduit_classes.requests import (
     ConduitRequest,
     BatchRequest,
+    TokenizationRequest,
 )
 from headwater_api.classes.embeddings_classes.requests import (
     ChromaBatch,
@@ -21,6 +22,7 @@ from headwater_api.classes.conduit_classes.responses import (
     ConduitResponse,
     BatchResponse,
     ConduitError,
+    TokenizationResponse,
 )
 from headwater_api.classes.embeddings_classes.responses import (
     EmbeddingsResponse,
@@ -55,6 +57,7 @@ __all__ = [
     # Requests
     "ConduitRequest",
     "BatchRequest",
+    "TokenizationRequest",
     "CuratorRequest",
     "ChromaBatch",
     "EmbeddingsRequest",
@@ -67,6 +70,7 @@ __all__ = [
     # Responses
     "ConduitResponse",
     "BatchResponse",
+    "TokenizationResponse",
     "ConduitError",
     "CuratorResponse",
     "CuratorResult",

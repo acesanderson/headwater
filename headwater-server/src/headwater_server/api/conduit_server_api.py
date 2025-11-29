@@ -5,6 +5,8 @@ from headwater_api.classes import (
     ConduitError,
     BatchRequest,
     BatchResponse,
+    TokenizationRequest,
+    TokenizationResponse,
 )
 
 
@@ -32,3 +34,13 @@ class ConduitServerAPI:
             )
 
             return await conduit_async_service(batch)
+
+        @self.app.post("/conduit/tokenize", response_model=TokenizationResponse)
+        async def conduit_tokenize(
+            request: TokenizationRequest,
+        ) -> TokenizationResponse:
+            from headwater_server.services.conduit_service.conduit_tokenize_service import (
+                conduit_tokenize_service,
+            )
+
+            return conduit_tokenize_service(request)

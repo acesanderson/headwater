@@ -9,6 +9,8 @@ from headwater_api.classes import (
     BatchRequest,
     BatchResponse,
     ConduitError,
+    TokenizationRequest,
+    TokenizationResponse,
 )
 
 
@@ -36,3 +38,11 @@ class ConduitAPI(BaseAPI):
         json_payload = batch.model_dump_json()
         response = self._request(method, endpoint, json_payload=json_payload)
         return BatchResponse.model_validate_json(response)
+
+    def tokenize(self, request: TokenizationRequest) -> TokenizationResponse:
+        """Tokenize text using the Conduit service"""
+        method = "POST"
+        endpoint = "/conduit/tokenize"
+        json_payload = request.model_dump_json()
+        response = self._request(method, endpoint, json_payload=json_payload)
+        return TokenizationResponse.model_validate_json(response)
