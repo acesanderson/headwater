@@ -23,9 +23,6 @@ class HeadwaterServer:
         async def lifespan(app: FastAPI):
             # Startup
             logger.info("🚀 Headwater Server starting up...")
-            from conduit.sync import Model
-
-            _ = Model._odometer_registry
             yield
             # Shutdown
             logger.info("🛑 Headwater Server shutting down...")
