@@ -19,12 +19,12 @@ class HeadwaterServerAPI:
             return {"message": "pong"}
 
         @self.app.get("/status", response_model=StatusResponse)
-        def status():
+        async def status():
             from headwater_server.services.status_service.get_status import (
                 get_status_service,
             )
 
-            return get_status_service(startup_time)
+            return await get_status_service(startup_time)
 
         @self.app.get("/routes")
         def list_routes():
