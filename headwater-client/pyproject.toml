@@ -10,6 +10,7 @@ dependencies = [
     "dbclients",
     "headwater_api",
     "siphon_api",
+    "httpx",
 ]
 
 [tool.hatch.build.targets.wheel]
