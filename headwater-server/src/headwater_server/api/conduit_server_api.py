@@ -19,7 +19,7 @@ class ConduitServerAPI:
         """
 
         @self.app.post("/conduit/generate", response_model=GenerationResponse)
-        async def conduit_sync(request: GenerationRequest) -> GenerationResponse:
+        async def conduit_generate(request: GenerationRequest) -> GenerationResponse:
             from headwater_server.services.conduit_service.conduit_generate_service import (
                 conduit_generate_service,
             )
@@ -28,7 +28,7 @@ class ConduitServerAPI:
 
         @self.app.post("/conduit/batch", response_model=BatchResponse)
         async def conduit_batch(batch: BatchRequest) -> BatchResponse:
-            from headwater_server.services.conduit_service.conduit_async_service import (
+            from headwater_server.services.conduit_service.conduit_batch_service import (
                 conduit_batch_service,
             )
 
