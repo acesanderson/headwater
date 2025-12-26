@@ -1,14 +1,16 @@
 from pydantic import Field, model_validator, BaseModel
-from conduit.request.request import Request as ConduitRequest
-from typing import override
+from conduit.domain.request.request import GenerationRequest
+from conduit.domain.request.generation_params import GenerationParams
+from conduit.domain.config.conduit_options import ConduitOptions
 
 
-class BatchRequest(ConduitRequest):
+class BatchRequest(BaseModel):
     """
     BatchRequest extends ConduitRequest to allow for multiple prompt strings or input variables.
     This is useful for processing multiple requests in a single API call.
     """
 
+    # Batch-specific fields
     prompt_strings: list[str] = Field(
         default_factory=list,
         description="List of prompt strings for each request. Prompt strings should be fully rendered.",
@@ -18,34 +20,12 @@ class BatchRequest(ConduitRequest):
         description="List of input variables for each request. Each dict should match the model's input schema.",
     )
     prompt_str: str | None = Field(
-        default=None, description="Single prompt string for the request."
+        default=None, description="Single jinja2 string for the request."
     )
 
-    # Override model_post_init to allow empty messages
-    @override
-    def model_post_init(self, __context) -> None:
-        """
-        Post-initialization method to validate and set parameters,
-        specifically allowing the 'messages' list to be empty for batch requests.
-        """
-        # --- Copied from Request.model_post_init ---
-        self._validate_model()  # Still need to validate the model exists
-        self._set_provider()  # Still need to determine the provider
-        self._validate_temperature()  # Still need to validate temperature
-        self._set_client_params()  # Still need to validate client_params
-
-        # --- OMITTED the check for empty messages ---
-        # if self.messages is None or len(self.messages) == 0:
-        #     raise ValueError("Messages cannot be empty. Likely a code error.")
-
-        # Still validate that the provider was set correctly
-        if self.provider == "" or self.provider is None:
-            raise ValueError(
-                "Provider must be set based on the model. Likely a code error."
-            )
-        # --- End of copied/modified logic ---
-
-        # The existing _exactly_one validator will still run afterwards
+    # Standard request fields
+    params: GenerationParams
+    options: ConduitOptions
 
     @model_validator(mode="after")
     def _exactly_one(
@@ -82,7 +62,7 @@ class TokenizationRequest(BaseModel):
 
 
 __all__ = [
-    "ConduitRequest",
+    "GenerationRequest",
     "BatchRequest",
     "TokenizationRequest",
 ]

@@ -1,6 +1,6 @@
 # Requests
 from headwater_api.classes.conduit_classes.requests import (
-    ConduitRequest,
+    GenerationRequest,
     BatchRequest,
     TokenizationRequest,
 )
@@ -19,9 +19,8 @@ from headwater_api.classes.curator_classes.requests import (
 
 # Responses
 from headwater_api.classes.conduit_classes.responses import (
-    ConduitResponse,
+    GenerationResponse,
     BatchResponse,
-    ConduitError,
     TokenizationResponse,
 )
 from headwater_api.classes.embeddings_classes.responses import (
@@ -55,7 +54,7 @@ from headwater_api.classes.embeddings_classes.embedding_models import (
 
 __all__ = [
     # Requests
-    "ConduitRequest",
+    "GenerationRequest",
     "BatchRequest",
     "TokenizationRequest",
     "CuratorRequest",
@@ -68,10 +67,9 @@ __all__ = [
     "QueryCollectionRequest",
     "QuickEmbeddingRequest",
     # Responses
-    "ConduitResponse",
+    "GenerationResponse",
     "BatchResponse",
     "TokenizationResponse",
-    "ConduitError",
     "CuratorResponse",
     "CuratorResult",
     "EmbeddingsResponse",

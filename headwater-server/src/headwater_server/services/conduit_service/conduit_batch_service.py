@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def conduit_async_service(
+async def conduit_batch_service(
     batch: BatchRequest,
 ) -> BatchResponse:
     """

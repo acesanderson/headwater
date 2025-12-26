@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from headwater_api.classes import (
-    ConduitRequest,
-    ConduitResponse,
-    ConduitError,
+    GenerationRequest,
+    GenerationResponse,
     BatchRequest,
     BatchResponse,
     TokenizationRequest,
@@ -19,21 +18,21 @@ class ConduitServerAPI:
         Register all conduit routes
         """
 
-        @self.app.post("/conduit/sync", response_model=ConduitResponse | ConduitError)
-        def conduit_sync(request: ConduitRequest):
-            from headwater_server.services.conduit_service.conduit_sync_service import (
-                conduit_sync_service,
+        @self.app.post("/conduit/generate", response_model=GenerationResponse)
+        async def conduit_sync(request: GenerationRequest) -> GenerationResponse:
+            from headwater_server.services.conduit_service.conduit_generate_service import (
+                conduit_generate_service,
             )
 
-            return conduit_sync_service(request)
+            return await conduit_generate_service(request)
 
-        @self.app.post("/conduit/async", response_model=BatchResponse)
-        async def conduit_async(batch: BatchRequest) -> BatchResponse:
+        @self.app.post("/conduit/batch", response_model=BatchResponse)
+        async def conduit_batch(batch: BatchRequest) -> BatchResponse:
             from headwater_server.services.conduit_service.conduit_async_service import (
-                conduit_async_service,
+                conduit_batch_service,
             )
 
-            return await conduit_async_service(batch)
+            return await conduit_batch_service(batch)
 
         @self.app.post("/conduit/tokenize", response_model=TokenizationResponse)
         async def conduit_tokenize(

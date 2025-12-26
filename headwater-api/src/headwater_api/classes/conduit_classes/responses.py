@@ -1,13 +1,12 @@
 from pydantic import BaseModel, Field
-from conduit.result.response import Response as ConduitResponse
-from conduit.result.error import ConduitError
+from conduit.domain.result.response import GenerationResponse
 
 
 # Async
 class BatchResponse(BaseModel):
     """Response model for batch processing"""
 
-    results: list[ConduitResponse | ConduitError] = Field(
+    results: list[GenerationResponse] = Field(
         ..., description="List of results for each input"
     )
 
@@ -22,7 +21,6 @@ class TokenizationResponse(BaseModel):
 
 __all__ = [
     "BatchResponse",
-    "ConduitResponse",
-    "ConduitError",
+    "GenerationResponse",
     "TokenizationResponse",
 ]
