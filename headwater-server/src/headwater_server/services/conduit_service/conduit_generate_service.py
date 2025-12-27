@@ -14,7 +14,7 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
     from conduit.storage.cache.postgres_cache import get_postgres_cache, PostgresCache
     from conduit.storage.repository.postgres_repository import (
         get_postgres_repository,
-        PostgresRepository,
+        PostgresConversationRepository,
     )
     from rich.console import Console
 
@@ -26,7 +26,7 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
     # Recreate options with proper excluded objects
     project_name = options.project_name
     cache: PostgresCache = get_postgres_cache(project_name)
-    repository: PostgresRepository = get_postgres_repository(project_name)
+    repository: PostgresConversationRepository = get_postgres_repository(project_name)
     console = Console()
     options = options.model_copy(
         update={
