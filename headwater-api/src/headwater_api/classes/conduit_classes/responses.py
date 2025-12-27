@@ -1,12 +1,13 @@
 from pydantic import BaseModel, Field
 from conduit.domain.result.response import GenerationResponse
+from conduit.domain.conversation.conversation import Conversation
 
 
 # Async
 class BatchResponse(BaseModel):
     """Response model for batch processing"""
 
-    results: list[GenerationResponse] = Field(
+    results: list[Conversation] = Field(
         ..., description="List of results for each input"
     )
 

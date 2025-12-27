@@ -11,7 +11,7 @@ class BatchRequest(BaseModel):
     """
 
     # Batch-specific fields
-    prompt_strings: list[str] = Field(
+    prompt_strings_list: list[str] = Field(
         default_factory=list,
         description="List of prompt strings for each request. Prompt strings should be fully rendered.",
     )
@@ -31,7 +31,7 @@ class BatchRequest(BaseModel):
     def _exactly_one(
         self,
     ):
-        has_prompts = bool(self.prompt_strings)
+        has_prompts = bool(self.prompt_strings_list)
         has_vars = bool(self.input_variables_list)
         if has_prompts == has_vars:
             raise ValueError(
