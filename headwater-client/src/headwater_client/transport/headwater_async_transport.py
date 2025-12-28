@@ -8,7 +8,6 @@ from urllib.parse import urljoin
 import httpx
 import logging
 import json
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ class HeadwaterAsyncTransport:
             self.base_url: str = self._get_url()
         else:
             self.base_url = base_url.rstrip("/")
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     def _get_url(self) -> str:
         """Get HeadwaterServer URL with same host detection logic as PostgreSQL"""
@@ -97,7 +96,7 @@ class HeadwaterAsyncTransport:
         and returns the raw JSON string response body.
         """
         await self._ensure_client()
-        
+
         safe_endpoint = endpoint.lstrip("/")
         full_url = urljoin(self.base_url, safe_endpoint)
         headers = {}
@@ -149,7 +148,7 @@ class HeadwaterAsyncTransport:
         This doesn't use ._request() because we want to handle timeouts and connection errors.
         """
         await self._ensure_client()
-        
+
         endpoint = "/ping"  # Or just "ping" if base_url ends with /
         full_url = urljoin(self.base_url, endpoint.lstrip("/"))
 
@@ -196,7 +195,7 @@ class HeadwaterAsyncTransport:
         Get server status + configuration.
         """
         await self._ensure_client()
-        
+
         method = "GET"
         endpoint = "/status"
         response = await self._client.request(
@@ -213,7 +212,7 @@ class HeadwaterAsyncTransport:
         List all available routes on the server. (GET /routes)
         """
         await self._ensure_client()
-        
+
         method = "GET"
         endpoint = "/routes"
         response = await self._client.request(
@@ -223,3 +222,4 @@ class HeadwaterAsyncTransport:
         )
         response.raise_for_status()
         return response.json()
+
