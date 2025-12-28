@@ -15,6 +15,7 @@ class ErrorType(str, Enum):
     INTERNAL_ERROR = "internal_error"
     TIMEOUT_ERROR = "timeout_error"
     DEPENDENCY_ERROR = "dependency_error"
+    NETWORK_ERROR = "network_error"
 
 
 class HeadwaterServerError(BaseModel):
