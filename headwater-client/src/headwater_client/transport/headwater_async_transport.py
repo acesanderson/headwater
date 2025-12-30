@@ -3,7 +3,7 @@ from headwater_api.classes import (
     HeadwaterServerException,
     StatusResponse,
 )
-from dbclients import get_network_context
+from dbclients.discovery.host import get_network_context
 from urllib.parse import urljoin
 import httpx
 import logging
