@@ -13,7 +13,7 @@ class SiphonServerAPI:
         """
 
         @self.app.post("/siphon/process", response_model=SiphonResponse)
-        def process_siphon(request: SiphonRequest):
+        async def process_siphon(request: SiphonRequest):
             """
             Curate items based on the provided request
             """
@@ -21,4 +21,4 @@ class SiphonServerAPI:
                 process_siphon_service,
             )
 
-            return process_siphon_service(request)
+            return await process_siphon_service(request)

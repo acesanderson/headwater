@@ -10,7 +10,7 @@ from siphon_api.api.from_siphon_request import ensure_temp_file
 from siphon_server.core.pipeline import SiphonPipeline
 
 
-def process_siphon_service(request: SiphonRequest) -> SiphonResponse:
+async def process_siphon_service(request: SiphonRequest) -> SiphonResponse:
     """
     Process content through the Siphon pipeline based on source origin.
 
@@ -24,7 +24,7 @@ def process_siphon_service(request: SiphonRequest) -> SiphonResponse:
         case SourceOrigin.FILE_PATH:
             with ensure_temp_file(request) as file_path:
                 pipeline = SiphonPipeline()
-                payload: PipelineClass = pipeline.process(
+                payload: PipelineClass = await pipeline.process(
                     str(file_path), action=action, use_cache=use_cache
                 )
             # With temp file having served its purpose, reassign the original request path
@@ -34,7 +34,7 @@ def process_siphon_service(request: SiphonRequest) -> SiphonResponse:
                 payload.source.original_source = request.source
         case SourceOrigin.URL:
             pipeline = SiphonPipeline()
-            payload = pipeline.process(
+            payload = await pipeline.process(
                 request.source, action=action, use_cache=use_cache
             )
     # Construct response
