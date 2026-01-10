@@ -11,11 +11,7 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
     """
     from conduit.core.model.model_async import ModelAsync
     from conduit.utils.progress.verbosity import Verbosity
-    from conduit.storage.cache.postgres_cache import get_postgres_cache, PostgresCache
-    from conduit.storage.repository.postgres_repository import (
-        get_postgres_repository,
-        PostgresConversationRepository,
-    )
+    from conduit.config import settings
     from rich.console import Console
 
     # First recreate the request -- we have python objects that need to be recreated
@@ -25,8 +21,8 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
 
     # Recreate options with proper excluded objects
     project_name = options.project_name
-    cache: PostgresCache = get_postgres_cache(project_name)
-    repository: PostgresConversationRepository = get_postgres_repository(project_name)
+    cache = settings.default_cache(project_name)
+    repository = await settings.default_repository(project_name)
     console = Console()
     options = options.model_copy(
         update={
