@@ -8,7 +8,11 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Reranker options
 rankers = {
-    "bge": {"model_name": "BAAI/bge-reranker-large", "model_type": "llm-layerwise"},
+    "bge": {
+        "model_name": "BAAI/bge-reranker-large",
+        "model_type": "llm-layerwise",
+        "max_length": 512,
+    },
     "mxbai": {
         "model_name": "mixedbread-ai/mxbai-rerank-large-v1",
         "model_type": "cross-encoder",
