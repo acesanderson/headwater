@@ -22,7 +22,7 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
     # Recreate options with proper excluded objects
     project_name = options.project_name
     cache = settings.default_cache(project_name)
-    repository = await settings.default_repository(project_name)
+    repository = settings.default_repository(project_name)
     console = Console()
     options = options.model_copy(
         update={
