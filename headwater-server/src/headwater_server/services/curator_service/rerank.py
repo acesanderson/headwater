@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from rerankers import Reranker
 import os
 
@@ -5,6 +7,17 @@ import os
 COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 JINA_API_KEY = os.getenv("JINA_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Monkey patch Reranker to force truncation at 512 tokens
+_original_init = Reranker.__init__
+
+def _patched_init(self, *args, **kwargs):
+    _original_init(self, *args, **kwargs)
+    # Force tokenizer to truncate to prevent tensor size mismatch errors
+    if hasattr(self, 'tokenizer') and self.tokenizer is not None:
+        self.tokenizer.model_max_length = 512
+
+Reranker.__init__ = _patched_init
 
 # Reranker options
 rankers = {
