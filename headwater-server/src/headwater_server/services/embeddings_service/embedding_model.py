@@ -1,11 +1,14 @@
 import torch
 import logging
+import os
 from typing import Protocol
 from sentence_transformers import SentenceTransformer
 from headwater_api.classes import ChromaBatch, load_embedding_models
 
 logger = logging.getLogger(__name__)
 _DEVICE_CACHE = None
+HUGGINGFACE_API_TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+os.environ["HF_TOKEN"] = HUGGINGFACE_API_TOKEN
 
 
 class EmbeddingFunction(Protocol):
