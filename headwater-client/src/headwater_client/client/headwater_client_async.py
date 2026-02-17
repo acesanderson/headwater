@@ -59,4 +59,3 @@ class HeadwaterAsyncClient:
     async def list_routes(self) -> dict:
         """List available API routes."""
         return await self._transport.list_routes()
-

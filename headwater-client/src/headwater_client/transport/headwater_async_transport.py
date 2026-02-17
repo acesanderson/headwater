@@ -33,8 +33,10 @@ class HeadwaterAsyncTransport:
         return f"http://{HEADWATER_SERVER_IP}:{HEADWATER_SERVER_DEFAULT_PORT}"
 
     async def __aenter__(self):
-        """Async context manager entry"""
-        self._client = httpx.AsyncClient()
+        """Async context manager entry with proper timeout configuration"""
+        # Set timeout to None to allow long-running inference tasks to complete
+        timeout = httpx.Timeout(None, connect=10.0)
+        self._client = httpx.AsyncClient(timeout=timeout)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -43,9 +45,10 @@ class HeadwaterAsyncTransport:
             await self._client.aclose()
 
     async def _ensure_client(self):
-        """Ensure client is initialized"""
+        """Ensure client is initialized if not using context manager"""
         if self._client is None:
-            self._client = httpx.AsyncClient()
+            timeout = httpx.Timeout(None, connect=10.0)
+            self._client = httpx.AsyncClient(timeout=timeout)
 
     def _handle_error_response(self, response: httpx.Response) -> None:
         """Parse HeadwaterServerError from response and raise appropriate exception"""
@@ -130,9 +133,9 @@ class HeadwaterAsyncTransport:
             # Raise a specific custom exception for network errors
             raise HeadwaterServerException(
                 HeadwaterServerError(
-                    error_type="NETWORK_ERROR", message=str(e), status_code=503
+                    error_type="network_error", message=str(e), status_code=503
                 )
-            ) from e
+            )
         except HeadwaterServerException:
             # Re-raise exceptions already handled (like from _handle_error_response)
             raise
@@ -222,4 +225,3 @@ class HeadwaterAsyncTransport:
         )
         response.raise_for_status()
         return response.json()
-

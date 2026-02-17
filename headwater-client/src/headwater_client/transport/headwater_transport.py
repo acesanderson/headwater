@@ -111,11 +111,18 @@ class HeadwaterTransport:
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error requesting {full_url}: {e}")
             # Raise a specific custom exception for network errors
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network error requesting {full_url}: {e}")
             raise HeadwaterServerException(
                 HeadwaterServerError(
-                    error_type="NETWORK_ERROR", message=str(e), status_code=503
+                    # FIX: change to lowercase to match Enum values
+                    error_type="network_error",
+                    message=str(e),
+                    status_code=503,
                 )
             ) from e
+
         except HeadwaterServerException:
             # Re-raise exceptions already handled (like from _handle_error_response)
             raise
