@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from headwater_api.classes import EmbedBatchRequest, EmbedBatchResponse
 from siphon_api.api.siphon_request import SiphonRequest
 from siphon_api.api.siphon_response import SiphonResponse
 
@@ -22,3 +23,17 @@ class SiphonServerAPI:
             )
 
             return await process_siphon_service(request)
+
+        @self.app.post("/siphon/embed-batch", response_model=EmbedBatchResponse)
+        async def embed_batch(request: EmbedBatchRequest):
+            """
+            Batch-embed siphon records by URI.
+
+            Fetches title+summary from DB, skips already-embedded rows (unless
+            force=True), encodes in chunks of 128, and writes vectors back.
+            """
+            from headwater_server.services.siphon_service.embed_batch_siphon_service import (
+                embed_batch_siphon_service,
+            )
+
+            return await embed_batch_siphon_service(request)

@@ -52,6 +52,10 @@ from headwater_api.classes.embeddings_classes.embedding_models import (
     load_embedding_models,
 )
 
+# Siphon
+from headwater_api.classes.siphon_classes.requests import EmbedBatchRequest, SIPHON_EMBED_MODEL
+from headwater_api.classes.siphon_classes.responses import EmbedBatchResponse
+
 __all__ = [
     # Requests
     "GenerationRequest",
@@ -88,4 +92,8 @@ __all__ = [
     "PingResponse",
     # Configs
     "load_embedding_models",
+    # Siphon
+    "EmbedBatchRequest",
+    "EmbedBatchResponse",
+    "SIPHON_EMBED_MODEL",
 ]
