@@ -67,6 +67,14 @@ from headwater_api.classes.reranker_classes.responses import (
     RerankerModelInfo,
 )
 
+# OpenAI compat
+from headwater_api.classes.conduit_classes.openai_compat import (
+    OpenAIChatMessage,
+    JsonSchemaFormat,
+    ResponseFormat,
+    OpenAIChatRequest,
+)
+
 __all__ = [
     # Requests
     "GenerationRequest",
@@ -116,4 +124,9 @@ __all__ = [
     "RerankResult",
     "RerankResponse",
     "RerankerModelInfo",
+    # OpenAI compat
+    "OpenAIChatMessage",
+    "JsonSchemaFormat",
+    "ResponseFormat",
+    "OpenAIChatRequest",
 ]
