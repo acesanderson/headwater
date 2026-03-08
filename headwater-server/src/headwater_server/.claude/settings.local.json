@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run:*)",
+      "Bash(uv sync:*)",
+      "Bash(git:*)",
+      "Bash(uv:*)",
+      "Bash(/opt/homebrew/bin/uv run:*)",
+      "Bash(/Users/bianders/.local/bin/uv run:*)",
+      "Bash(export:*)",
+      "Bash(/Users/bianders/.local/bin/uv:*)",
+      "Bash(command:*)",
+      "Bash(/opt/homebrew/bin/uv:*)",
+      "Bash(python:*)",
+      "Bash(source:*)",
+      "Read(//Users/bianders/Brian_Code/headwater/**)",
+      "Bash(VIRTUAL_ENV=/Users/bianders/Brian_Code/headwater/headwater-api/.venv uv run:*)",
+      "Bash(mkdir:*)"
+    ]
+  }
+}
