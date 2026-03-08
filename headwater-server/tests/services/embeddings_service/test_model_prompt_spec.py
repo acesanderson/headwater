@@ -47,3 +47,11 @@ def test_get_model_prompt_spec_bge_is_optional():
     spec = get_model_prompt_spec("BAAI/bge-large-en-v1.5")
     assert spec.prompt_required is False
     assert spec.prompt_unsupported is False
+
+
+def test_embedding_task_enum_values():
+    from headwater_api.classes import EmbeddingTask
+    assert EmbeddingTask.query.value == "query"
+    assert EmbeddingTask.document.value == "document"
+    assert EmbeddingTask.classification.value == "classification"
+    assert EmbeddingTask.clustering.value == "clustering"

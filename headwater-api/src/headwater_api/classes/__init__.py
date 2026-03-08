@@ -53,6 +53,7 @@ from headwater_api.classes.embeddings_classes.embedding_models import (
     get_model_prompt_spec,
     ModelPromptSpec,
 )
+from headwater_api.classes.embeddings_classes.task import EmbeddingTask
 
 # Siphon
 from headwater_api.classes.siphon_classes.requests import EmbedBatchRequest, SIPHON_EMBED_MODEL
@@ -104,6 +105,7 @@ __all__ = [
     "load_embedding_models",
     "get_model_prompt_spec",
     "ModelPromptSpec",
+    "EmbeddingTask",
     # Siphon
     "EmbedBatchRequest",
     "EmbedBatchResponse",
