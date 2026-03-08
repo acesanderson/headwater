@@ -131,6 +131,74 @@ def test_ac2_embeddings_request_prompt_nomic_is_valid():
     assert req.prompt == "search_query: "
 
 
+# ── Service-layer task resolution ──────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_service_resolves_task_to_prompt_string_before_model_call():
+    """
+    generate_embeddings_service resolves task='query' to the model-specific prompt
+    string and passes it to EmbeddingModel.generate_embeddings.
+    """
+    from unittest.mock import MagicMock, patch
+    from headwater_api.classes import EmbeddingsRequest, EmbeddingTask, ChromaBatch
+
+    batch = ChromaBatch(ids=["1"], documents=["hello"])
+    request = EmbeddingsRequest(
+        model="nomic-ai/nomic-embed-text-v1.5",
+        batch=batch,
+        task=EmbeddingTask.query,
+    )
+
+    mock_model_instance = MagicMock()
+    mock_model_instance.generate_embeddings.return_value = ChromaBatch(
+        ids=["1"], documents=["hello"], embeddings=[[0.1, 0.2]]
+    )
+
+    with patch(
+        "headwater_server.services.embeddings_service.generate_embeddings_service.EmbeddingModel",
+        return_value=mock_model_instance,
+    ):
+        from headwater_server.services.embeddings_service.generate_embeddings_service import (
+            generate_embeddings_service,
+        )
+        await generate_embeddings_service(request)
+
+    mock_model_instance.generate_embeddings.assert_called_once()
+    _, kwargs = mock_model_instance.generate_embeddings.call_args
+    assert kwargs.get("prompt") == "search_query: "
+
+
+def test_quick_service_resolves_task_to_prompt_string_before_model_call():
+    """
+    quick_embedding_service resolves task='query' to the model-specific prompt
+    string and passes it to EmbeddingModel.generate_embedding.
+    """
+    from unittest.mock import MagicMock, patch
+    from headwater_api.classes import QuickEmbeddingRequest, EmbeddingTask
+
+    request = QuickEmbeddingRequest(
+        query="hello",
+        model="nomic-ai/nomic-embed-text-v1.5",
+        task=EmbeddingTask.query,
+    )
+
+    mock_model_instance = MagicMock()
+    mock_model_instance.generate_embedding.return_value = [0.1, 0.2]
+
+    with patch(
+        "headwater_server.services.embeddings_service.quick_embedding_service.EmbeddingModel",
+        return_value=mock_model_instance,
+    ):
+        from headwater_server.services.embeddings_service.quick_embedding_service import (
+            quick_embedding_service,
+        )
+        quick_embedding_service(request)
+
+    mock_model_instance.generate_embedding.assert_called_once()
+    _, kwargs = mock_model_instance.generate_embedding.call_args
+    assert kwargs.get("prompt") == "search_query: "
+
+
 # ── AC9: QuickEmbeddingRequest mirrors EmbeddingsRequest validation ────────────
 
 def test_ac9_quick_task_and_prompt_both_raises():
