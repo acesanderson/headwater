@@ -50,6 +50,8 @@ from headwater_api.classes.server_classes.status import StatusResponse, PingResp
 # Configs
 from headwater_api.classes.embeddings_classes.embedding_models import (
     load_embedding_models,
+    get_model_prompt_spec,
+    ModelPromptSpec,
 )
 
 # Siphon
@@ -100,6 +102,8 @@ __all__ = [
     "PingResponse",
     # Configs
     "load_embedding_models",
+    "get_model_prompt_spec",
+    "ModelPromptSpec",
     # Siphon
     "EmbedBatchRequest",
     "EmbedBatchResponse",
