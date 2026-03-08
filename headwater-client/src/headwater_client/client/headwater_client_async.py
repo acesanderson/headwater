@@ -22,6 +22,8 @@ finally:
 from headwater_client.api.conduit_async_api import ConduitAsyncAPI
 from headwater_client.api.curator_async_api import CuratorAsyncAPI
 from headwater_client.api.embeddings_async_api import EmbeddingsAsyncAPI
+from headwater_client.api.openai_async_api import OpenAICompatAsyncAPI
+from headwater_client.api.reranker_async_api import RerankerAsyncAPI
 from headwater_client.api.siphon_async_api import SiphonAsyncAPI
 from headwater_client.transport.headwater_async_transport import HeadwaterAsyncTransport
 from headwater_api.classes import StatusResponse
@@ -33,6 +35,8 @@ class HeadwaterAsyncClient:
         self.conduit = ConduitAsyncAPI(self._transport)
         self.curator = CuratorAsyncAPI(self._transport)
         self.embeddings = EmbeddingsAsyncAPI(self._transport)
+        self.openai = OpenAICompatAsyncAPI(self._transport)
+        self.reranker = RerankerAsyncAPI(self._transport)
         self.siphon = SiphonAsyncAPI(self._transport)
 
     async def __aenter__(self):
