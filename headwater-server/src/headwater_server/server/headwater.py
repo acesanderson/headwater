@@ -5,6 +5,7 @@ from headwater_server.api.embeddings_server_api import EmbeddingsServerAPI
 from headwater_server.api.curator_server_api import CuratorServerAPI
 from headwater_server.api.siphon_server_api import SiphonServerAPI
 from headwater_server.api.headwater_api import HeadwaterServerAPI
+from headwater_server.api.reranker_server_api import RerankerServerAPI
 
 import logging
 
@@ -44,6 +45,7 @@ class HeadwaterServer:
         CuratorServerAPI(self.app).register_routes()
         SiphonServerAPI(self.app).register_routes()
         HeadwaterServerAPI(self.app).register_routes()
+        RerankerServerAPI(self.app).register_routes()
 
     def _register_middleware(self):
         """
