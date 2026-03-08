@@ -1,0 +1,13 @@
+{
+  "flash":   "ce-esci-MiniLM-L12-v2",
+  "mini":    "ce-esci-MiniLM-L12-v2",
+  "bge":     "BAAI/bge-reranker-large",
+  "mxbai":   "mixedbread-ai/mxbai-rerank-large-v1",
+  "ce":      "cross-encoder",
+  "colbert": "colbert",
+  "llm":     "llm-layerwise",
+  "t5":      "t5",
+  "jina":    "jina-reranker-v2-base-multilingual",
+  "cohere":  "cohere",
+  "rankllm": "rankllm"
+}

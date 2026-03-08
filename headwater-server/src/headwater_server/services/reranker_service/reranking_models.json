@@ -1,0 +1,12 @@
+{
+  "ce-esci-MiniLM-L12-v2":               { "model_type": "flashrank",     "output_type": "bounded" },
+  "cross-encoder":                        { "model_type": "cross-encoder", "output_type": "logits"  },
+  "BAAI/bge-reranker-large":             { "model_type": "llm-layerwise", "output_type": "logits"  },
+  "mixedbread-ai/mxbai-rerank-large-v1": { "model_type": "cross-encoder", "output_type": "logits"  },
+  "colbert":                              { "model_type": "colbert",       "output_type": "bounded" },
+  "llm-layerwise":                        { "model_type": "llm-layerwise", "output_type": "logits"  },
+  "t5":                                   { "model_type": "t5",            "output_type": "logits"  },
+  "jina-reranker-v2-base-multilingual":   { "model_type": "api", "api_key_env": "JINA_API_KEY",    "output_type": "bounded" },
+  "cohere":                               { "model_type": "api", "api_key_env": "COHERE_API_KEY", "lang": "en", "output_type": "bounded" },
+  "rankllm":                              { "model_type": "api", "api_key_env": "OPENAI_API_KEY",  "output_type": "logits"  }
+}
