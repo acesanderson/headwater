@@ -45,9 +45,9 @@ async def run_rerank(request: RerankRequest) -> RerankResponse:
     ranker = get_reranker(resolved_name, model_config)
     docs_text = [d.text for d in documents]
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     ranked = await loop.run_in_executor(
-        None, lambda: ranker.rank(query=request.query, docs=docs_text)
+        None, lambda: ranker.rank(query=request.query, docs=docs_text, max_length=request.max_length)
     )
 
     top_results = ranked.top_k(effective_k)
