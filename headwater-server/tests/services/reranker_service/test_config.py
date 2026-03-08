@@ -52,3 +52,24 @@ def test_list_models_returns_name_and_output_type_for_all_models():
         assert entry["output_type"] in {"logits", "bounded"}
     names = {e["name"] for e in result}
     assert names == set(_MODELS.keys())
+
+
+@pytest.mark.asyncio
+async def test_list_models_service_returns_model_info_for_every_allowlisted_model():
+    """AC11: list_reranker_models_service returns a RerankerModelInfo for every key in reranking_models.json."""
+    from headwater_server.services.reranker_service.list_reranker_models_service import (
+        list_reranker_models_service,
+    )
+    from headwater_server.services.reranker_service.config import _MODELS
+    from headwater_api.classes import RerankerModelInfo
+
+    result = await list_reranker_models_service()
+
+    assert len(result) == len(_MODELS)
+    assert all(isinstance(m, RerankerModelInfo) for m in result)
+
+    names = {m.name for m in result}
+    assert names == set(_MODELS.keys())
+
+    for m in result:
+        assert m.output_type in {"logits", "bounded"}
