@@ -5,7 +5,7 @@ from headwater_api.classes import RerankRequest, RerankResponse, RerankerModelIn
 
 class RerankerServerAPI:
     def __init__(self, app: FastAPI):
-        self.app = app
+        self.app: FastAPI = app
 
     def register_routes(self):
         @self.app.post("/reranker/rerank", response_model=RerankResponse)
