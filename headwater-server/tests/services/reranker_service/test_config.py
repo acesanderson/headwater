@@ -40,3 +40,15 @@ def test_get_model_config_returns_dict():
     config = get_model_config("ce-esci-MiniLM-L12-v2")
     assert config["model_type"] == "flashrank"
     assert config["output_type"] == "bounded"
+
+
+def test_list_models_returns_name_and_output_type_for_all_models():
+    """list_models returns one entry per model in reranking_models.json, each with name and output_type."""
+    from headwater_server.services.reranker_service.config import list_models, _MODELS
+    result = list_models()
+    assert len(result) == len(_MODELS)
+    for entry in result:
+        assert set(entry.keys()) == {"name", "output_type"}
+        assert entry["output_type"] in {"logits", "bounded"}
+    names = {e["name"] for e in result}
+    assert names == set(_MODELS.keys())
