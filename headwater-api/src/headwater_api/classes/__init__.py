@@ -56,6 +56,14 @@ from headwater_api.classes.embeddings_classes.embedding_models import (
 from headwater_api.classes.siphon_classes.requests import EmbedBatchRequest, SIPHON_EMBED_MODEL
 from headwater_api.classes.siphon_classes.responses import EmbedBatchResponse
 
+# Reranker
+from headwater_api.classes.reranker_classes.requests import RerankDocument, RerankRequest
+from headwater_api.classes.reranker_classes.responses import (
+    RerankResult,
+    RerankResponse,
+    RerankerModelInfo,
+)
+
 __all__ = [
     # Requests
     "GenerationRequest",
@@ -96,4 +104,10 @@ __all__ = [
     "EmbedBatchRequest",
     "EmbedBatchResponse",
     "SIPHON_EMBED_MODEL",
+    # Reranker
+    "RerankDocument",
+    "RerankRequest",
+    "RerankResult",
+    "RerankResponse",
+    "RerankerModelInfo",
 ]
