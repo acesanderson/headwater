@@ -97,6 +97,62 @@ class QuickEmbeddingRequest(BaseModel):
         default="sentence-transformers/all-MiniLM-L6-v2",
         description="The embedding model to use for generating embeddings.",
     )
+    task: EmbeddingTask | None = Field(
+        default=None,
+        description=(
+            "Model-agnostic task type. Resolved server-side to the model-specific "
+            "prompt string. Mutually exclusive with 'prompt'."
+        ),
+    )
+    prompt: str | None = Field(
+        default=None,
+        description=(
+            "Raw prompt string prepended to each document via SentenceTransformers "
+            "encode(prompt=...). Mutually exclusive with 'task'."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _validate_prompt_fields(self) -> QuickEmbeddingRequest:
+        from headwater_api.classes.embeddings_classes.embedding_models import (
+            load_embedding_models,
+            get_model_prompt_spec,
+        )
+
+        if self.task is not None and self.prompt is not None:
+            raise ValueError("Provide 'task' or 'prompt', not both.")
+
+        if self.model not in load_embedding_models():
+            return self
+
+        spec = get_model_prompt_spec(self.model)
+
+        if spec.prompt_unsupported and (self.task is not None or self.prompt is not None):
+            raise ValueError(
+                f"Model '{self.model}' does not support prompt-based embedding."
+            )
+
+        if spec.prompt_required and self.task is None and self.prompt is None:
+            raise ValueError(
+                f"Model '{self.model}' requires a 'task' or 'prompt'."
+            )
+
+        if self.task is not None:
+            if spec.task_map is None or self.task.value not in spec.task_map:
+                supported = list(spec.task_map.keys()) if spec.task_map else []
+                raise ValueError(
+                    f"Model '{self.model}' does not support task '{self.task.value}'. "
+                    f"Supported tasks: {supported}"
+                )
+
+        if self.prompt is not None and spec.valid_prefixes is not None:
+            if not any(self.prompt.startswith(p) for p in spec.valid_prefixes):
+                raise ValueError(
+                    f"Invalid prompt for model '{self.model}'. "
+                    f"Must start with one of: {spec.valid_prefixes}"
+                )
+
+        return self
 
 
 # Collection Operations
