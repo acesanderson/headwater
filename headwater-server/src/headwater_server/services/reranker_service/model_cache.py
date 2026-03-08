@@ -20,7 +20,11 @@ def get_reranker(resolved_name: str, model_config: dict) -> Reranker:
                 if "api_key_env" in model_config:
                     kwargs["api_key"] = os.getenv(model_config["api_key_env"])
                 logger.info("loading model: %s", resolved_name)
-                _cache[resolved_name] = Reranker(resolved_name, verbose=False, **kwargs)
+                try:
+                    _cache[resolved_name] = Reranker(resolved_name, verbose=False, **kwargs)
+                except Exception as e:
+                    logger.error("Failed to instantiate Reranker '%s': %s", resolved_name, e)
+                    raise
                 logger.info("model loaded and cached: %s", resolved_name)
     else:
         logger.info("cache hit: %s", resolved_name)

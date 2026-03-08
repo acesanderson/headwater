@@ -54,7 +54,11 @@ async def run_rerank(request: RerankRequest) -> RerankResponse:
 
     results = []
     for result in top_results:
-        original_index: int = result.document.doc_id
+        original_index = result.document.doc_id
+        if not isinstance(original_index, int):
+            raise ValueError(
+                f"Unexpected doc_id type {type(original_index).__name__} from reranker; expected int"
+            )
         score = _sigmoid(result.score) if request.normalize_scores else result.score
         results.append(
             RerankResult(
