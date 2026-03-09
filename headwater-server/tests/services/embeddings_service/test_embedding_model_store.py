@@ -71,3 +71,10 @@ def test_get_spec_returns_spec_when_populated(patched_store):
     assert isinstance(result, EmbeddingModelSpec)
     assert result.model == "BAAI/bge-m3"
     assert result.embedding_dim == 1024
+
+
+# Task 10 — AC11: get_all_specs() and by_provider()
+
+def test_by_provider_empty_when_none_registered(patched_store):
+    result = EmbeddingModelStore.by_provider(EmbeddingProvider.OPENAI)
+    assert result == []
