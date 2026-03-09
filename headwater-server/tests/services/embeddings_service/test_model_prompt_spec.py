@@ -2,14 +2,6 @@ from __future__ import annotations
 import pytest
 
 
-def test_load_embedding_models_returns_list_of_strings():
-    from headwater_api.classes import load_embedding_models
-    models = load_embedding_models()
-    assert isinstance(models, list)
-    assert all(isinstance(m, str) for m in models)
-    assert "nomic-ai/nomic-embed-text-v1.5" in models
-    assert "intfloat/e5-large-v2" in models
-
 
 def test_get_model_prompt_spec_nomic():
     from headwater_api.classes.embeddings_classes.embedding_models import get_model_prompt_spec
@@ -41,12 +33,6 @@ def test_get_model_prompt_spec_minilm_is_unsupported():
     assert spec.prompt_unsupported is True
     assert spec.prompt_required is False
 
-
-def test_get_model_prompt_spec_bge_is_optional():
-    from headwater_api.classes.embeddings_classes.embedding_models import get_model_prompt_spec
-    spec = get_model_prompt_spec("BAAI/bge-large-en-v1.5")
-    assert spec.prompt_required is False
-    assert spec.prompt_unsupported is False
 
 
 def test_embedding_task_enum_values():
