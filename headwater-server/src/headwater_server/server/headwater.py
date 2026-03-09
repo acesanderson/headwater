@@ -1,3 +1,4 @@
+from __future__ import annotations
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from headwater_server.api.conduit_server_api import ConduitServerAPI
