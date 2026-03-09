@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from headwater_api.classes import (
     EmbeddingsRequest,
     EmbeddingsResponse,
+    EmbeddingModelSpec,
     QuickEmbeddingRequest,
     QuickEmbeddingResponse,
     CreateCollectionRequest,
@@ -35,8 +36,8 @@ class EmbeddingsServerAPI:
 
             return await generate_embeddings_service(request)
 
-        @self.app.get("/conduit/embeddings/models", response_model=list[str])
-        async def list_embedding_models() -> list[str]:
+        @self.app.get("/conduit/embeddings/models", response_model=list[EmbeddingModelSpec])
+        async def list_embedding_models() -> list[EmbeddingModelSpec]:
             from headwater_server.services.embeddings_service.list_embedding_models_service import (
                 list_embedding_models_service,
             )
