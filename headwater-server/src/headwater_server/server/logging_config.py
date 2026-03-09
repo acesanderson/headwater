@@ -14,8 +14,12 @@ logger.info("Server processing request")  # Appears in console and file
 ```
 """
 
+from __future__ import annotations
+
+import collections
 import logging
 import os
+from logging.handlers import TimedRotatingFileHandler
 from xdg_base_dirs import (
     xdg_state_home,
 )
@@ -58,7 +62,12 @@ log_dir = xdg_state_home() / "headwater_server" / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
 log_file = log_dir / "server.log"
 
-file_handler = logging.FileHandler(log_file, encoding="utf-8")
+file_handler = TimedRotatingFileHandler(
+    log_file,
+    when='midnight',
+    backupCount=30,
+    encoding='utf-8',
+)
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(
     logging.Formatter(
@@ -67,10 +76,46 @@ file_handler.setFormatter(
     )
 )
 
+
+class RingBufferHandler(logging.Handler):
+    def __init__(self, capacity: int = 500):
+        super().__init__()
+        self.capacity = capacity
+        self._buffer: collections.deque = collections.deque(maxlen=capacity)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self._buffer.append(record)
+
+    def get_records(self, n: int) -> list[dict]:
+        records = list(self._buffer)
+        sliced = records[-n:] if n < len(records) else records
+        return [
+            {
+                "timestamp": r.created,
+                "level": r.levelname,
+                "logger": r.name,
+                "message": r.getMessage(),
+                "pathname": getattr(r, "pathname", f"{r.filename}:{r.lineno}"),
+            }
+            for r in sliced
+        ]
+
+    def get_response(self, n: int):
+        from headwater_api.classes import LogsLastResponse, LogEntry
+        entries = [LogEntry(**e) for e in self.get_records(n)]
+        return LogsLastResponse(
+            entries=entries,
+            total_buffered=len(self._buffer),
+            capacity=self.capacity,
+        )
+
+
+ring_buffer = RingBufferHandler(capacity=500)
+
 # --- Root logger wiring ---
 logging.basicConfig(
     level=logging.DEBUG,  # allow DEBUG to reach handlers; handlers filter individually
-    handlers=[rich_handler, file_handler],
+    handlers=[rich_handler, file_handler, ring_buffer],
 )
 
 logger = logging.getLogger(__name__)
