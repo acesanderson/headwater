@@ -80,6 +80,8 @@ class RingBufferHandler(logging.Handler):
         self._buffer.append(record)
 
     def get_records(self, n: int) -> list[dict]:
+        if n <= 0:
+            return []
         records = list(self._buffer)
         return [
             {
