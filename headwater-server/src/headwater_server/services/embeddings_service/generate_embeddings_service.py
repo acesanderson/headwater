@@ -1,18 +1,14 @@
 from __future__ import annotations
-
 import logging
-
 from headwater_api.classes import EmbeddingsRequest, EmbeddingsResponse
 from headwater_server.services.embeddings_service.embedding_model import EmbeddingModel
+from headwater_server.services.embeddings_service.embedding_model_store import EmbeddingModelStore
 
 logger = logging.getLogger(__name__)
 
 
-async def generate_embeddings_service(
-    request: EmbeddingsRequest,
-) -> EmbeddingsResponse:
+async def generate_embeddings_service(request: EmbeddingsRequest) -> EmbeddingsResponse:
     from headwater_api.classes import ChromaBatch
-    from headwater_api.classes.embeddings_classes.embedding_models import get_model_prompt_spec
 
     model: str = request.model
     batch: ChromaBatch = request.batch
@@ -32,7 +28,7 @@ async def generate_embeddings_service(
 
     prompt: str | None = request.prompt
     if request.task is not None:
-        spec = get_model_prompt_spec(model)
+        spec = EmbeddingModelStore.get_spec(model)
         prompt = spec.task_map[request.task.value]
 
     embedding_model = EmbeddingModel(model)
