@@ -16,6 +16,9 @@ from headwater_client.api.embeddings_api import EmbeddingsAPI
 from headwater_client.api.reranker_api import RerankerAPI
 from headwater_client.api.siphon_sync_api import SiphonAPI
 from headwater_client.transport.headwater_transport import HeadwaterTransport
+from __future__ import annotations
+
+from headwater_api.classes import LogsLastResponse
 from headwater_api.classes import StatusResponse
 
 
@@ -39,3 +42,6 @@ class HeadwaterClient:
     def list_routes(self) -> list[dict]:
         """List available API routes."""
         return self._transport.list_routes()
+
+    def get_logs_last(self, n: int = 50) -> LogsLastResponse:
+        return self._transport.get_logs_last(n)

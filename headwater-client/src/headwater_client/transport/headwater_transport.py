@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from headwater_api.classes import (
     HeadwaterServerError,
     HeadwaterServerException,
+    LogsLastResponse,
     StatusResponse,
 )
 from dbclients.discovery.host import get_network_context
@@ -210,3 +213,7 @@ class HeadwaterTransport:
         )
         response.raise_for_status()
         return response.json()
+
+    def get_logs_last(self, n: int = 50) -> LogsLastResponse:
+        response = self._request("GET", f"/logs/last?n={n}")
+        return LogsLastResponse.model_validate_json(response)
