@@ -2,10 +2,13 @@
 Client for interacting with the Curator service.
 """
 
+from __future__ import annotations
+from pydantic import TypeAdapter
 from headwater_client.api.base_api import BaseAPI
 from headwater_api.classes import (
     EmbeddingsRequest,
     EmbeddingsResponse,
+    EmbeddingModelSpec,
     QuickEmbeddingRequest,
     QuickEmbeddingResponse,
     CreateCollectionRequest,
@@ -37,15 +40,14 @@ class EmbeddingsAPI(BaseAPI):
 
     def list_embedding_models(
         self,
-    ) -> list[str]:
+    ) -> list[EmbeddingModelSpec]:
         """
         List available embedding models from the server.
         """
         method = "GET"
         endpoint = "/conduit/embeddings/models"
-        json_payload = None
-        response = self._request(method, endpoint, json_payload=json_payload)
-        return response
+        response = self._request(method, endpoint)
+        return TypeAdapter(list[EmbeddingModelSpec]).validate_json(response)
 
     def quick_embedding(
         self,
