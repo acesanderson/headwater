@@ -1,6 +1,9 @@
 from __future__ import annotations
 import logging
-from conduit.sync import Conduit, GenerationParams, ConduitOptions, Verbosity
+from conduit.sync import Conduit
+from conduit.sync import GenerationParams
+from conduit.sync import ConduitOptions
+from conduit.sync import Verbosity
 from conduit.core.prompt.prompt import Prompt
 from headwater_api.classes import EmbeddingModelSpec, EmbeddingProvider
 
@@ -45,7 +48,7 @@ def get_embedding_spec(model: str, provider: str) -> EmbeddingModelSpec:
     conduit = Conduit(prompt=prompt, params=params, options=options)
     response = conduit.run(input_variables={"model": model, "provider": provider})
     spec: EmbeddingModelSpec = response.last.parsed
-    # Always override model and provider fields — never trust Perplexity's output for these
+    # Always override model and provider from the caller's args — never trust Perplexity's output for either field
     return EmbeddingModelSpec(**{
         **spec.model_dump(),
         "model": model,
