@@ -7,7 +7,8 @@ from typing import Protocol
 import torch
 from sentence_transformers import SentenceTransformer
 
-from headwater_api.classes import ChromaBatch, load_embedding_models
+from headwater_api.classes import ChromaBatch
+from headwater_server.services.embeddings_service.embedding_model_store import EmbeddingModelStore
 
 logger = logging.getLogger(__name__)
 _DEVICE_CACHE = None
@@ -83,7 +84,7 @@ class EmbeddingModel:
 
     @classmethod
     def models(cls) -> list[str]:
-        return load_embedding_models()
+        return EmbeddingModelStore.list_models()
 
     @classmethod
     def device(cls) -> str:
