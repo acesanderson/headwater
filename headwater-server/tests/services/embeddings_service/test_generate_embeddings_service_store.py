@@ -1,11 +1,14 @@
 from __future__ import annotations
+import asyncio
 from unittest.mock import patch, MagicMock
-import pytest
-from headwater_api.classes import EmbeddingModelSpec, EmbeddingProvider, ChromaBatch, EmbeddingsRequest
+from headwater_api.classes import EmbeddingModelSpec, ChromaBatch, EmbeddingsRequest
 from headwater_api.classes.embeddings_classes.task import EmbeddingTask
+from headwater_server.services.embeddings_service.generate_embeddings_service import (
+    generate_embeddings_service,
+)
 
 
-def test_generate_embeddings_calls_get_spec_not_old_function(patched_store, monkeypatch):
+def test_generate_embeddings_calls_get_spec_not_old_function(patched_store):
     # Ensure get_spec is called (not the old get_model_prompt_spec)
     with patch(
         "headwater_server.services.embeddings_service.generate_embeddings_service.EmbeddingModelStore.get_spec"
@@ -23,11 +26,6 @@ def test_generate_embeddings_calls_get_spec_not_old_function(patched_store, monk
             ids=["1"], documents=["test"], embeddings=[[0.1, 0.2]]
         )
         mock_model_cls.return_value = mock_instance
-
-        import asyncio
-        from headwater_server.services.embeddings_service.generate_embeddings_service import (
-            generate_embeddings_service,
-        )
         # Use an unknown model so the EmbeddingsRequest validator (which still uses the old
         # file-based get_model_prompt_spec) skips validation for unknown models.
         # Pass task=EmbeddingTask.query so the service actually calls EmbeddingModelStore.get_spec.
