@@ -48,11 +48,8 @@ from headwater_api.classes.server_classes.exceptions import (
 from headwater_api.classes.server_classes.status import StatusResponse, PingResponse
 
 # Configs
-from headwater_api.classes.embeddings_classes.embedding_models import (
-    load_embedding_models,
-    get_model_prompt_spec,
-    ModelPromptSpec,
-)
+from headwater_api.classes.embeddings_classes.embedding_provider import EmbeddingProvider
+from headwater_api.classes.embeddings_classes.embedding_model_spec import EmbeddingModelSpec
 from headwater_api.classes.embeddings_classes.task import EmbeddingTask
 
 # Siphon
@@ -110,9 +107,8 @@ __all__ = [
     "StatusResponse",
     "PingResponse",
     # Configs
-    "load_embedding_models",
-    "get_model_prompt_spec",
-    "ModelPromptSpec",
+    "EmbeddingProvider",
+    "EmbeddingModelSpec",
     "EmbeddingTask",
     # Siphon
     "EmbedBatchRequest",
