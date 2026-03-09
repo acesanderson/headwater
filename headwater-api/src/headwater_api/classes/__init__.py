@@ -46,6 +46,7 @@ from headwater_api.classes.server_classes.exceptions import (
     ErrorType,
 )
 from headwater_api.classes.server_classes.status import StatusResponse, PingResponse
+from headwater_api.classes.server_classes.logs import LogEntry, LogsLastResponse
 
 # Configs
 from headwater_api.classes.embeddings_classes.embedding_provider import EmbeddingProvider
@@ -106,6 +107,8 @@ __all__ = [
     "ErrorType",
     "StatusResponse",
     "PingResponse",
+    "LogEntry",
+    "LogsLastResponse",
     # Configs
     "EmbeddingProvider",
     "EmbeddingModelSpec",

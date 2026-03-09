@@ -109,4 +109,7 @@ class HeadwaterServerException(Exception):
         super().__init__(server_error.message)
 
     def __str__(self):
-        return f"HeadwaterServer {self.server_error.error_type}: {self.server_error.message}"
+        base = f"HeadwaterServer {self.server_error.error_type}: {self.server_error.message}"
+        if self.server_error.traceback:
+            return f"{base}\n\nServer traceback:\n{self.server_error.traceback}"
+        return base
