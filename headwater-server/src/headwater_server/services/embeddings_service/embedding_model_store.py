@@ -21,7 +21,7 @@ class EmbeddingModelStore:
 
     @classmethod
     def list_models(cls) -> list[str]:
-        return list(itertools.chain.from_iterable(cls.models().values()))
+        return list(dict.fromkeys(itertools.chain.from_iterable(cls.models().values())))
 
     @classmethod
     def identify_provider(cls, model: str) -> EmbeddingProvider:
@@ -61,7 +61,6 @@ class EmbeddingModelStore:
 
     @classmethod
     def get_all_specs(cls) -> list[EmbeddingModelSpec]:
-        from headwater_api.classes import EmbeddingModelSpec
         from headwater_server.services.embeddings_service.embedding_modelspecs_crud import (
             get_all_embedding_specs,
         )
@@ -69,5 +68,4 @@ class EmbeddingModelStore:
 
     @classmethod
     def by_provider(cls, provider: EmbeddingProvider) -> list[EmbeddingModelSpec]:
-        from headwater_api.classes import EmbeddingProvider as EP
         return [s for s in cls.get_all_specs() if s.provider == provider]

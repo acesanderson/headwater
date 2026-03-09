@@ -28,8 +28,5 @@ def tmp_db(tmp_path):
 def patched_store(monkeypatch, registry_path, tmp_db):
     import headwater_server.services.embeddings_service.embedding_modelspecs_crud as crud
     monkeypatch.setattr(crud, "db", tmp_db)
-    try:
-        import headwater_server.services.embeddings_service.embedding_model_store as store_mod
-        monkeypatch.setattr(store_mod, "_REGISTRY_PATH", registry_path)
-    except ImportError:
-        pass
+    import headwater_server.services.embeddings_service.embedding_model_store as store_mod
+    monkeypatch.setattr(store_mod, "_REGISTRY_PATH", registry_path)
