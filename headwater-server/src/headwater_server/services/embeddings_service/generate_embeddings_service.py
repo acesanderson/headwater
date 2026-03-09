@@ -1,5 +1,8 @@
 from __future__ import annotations
+import asyncio
 import logging
+import time
+
 from headwater_api.classes import EmbeddingsRequest, EmbeddingsResponse
 from headwater_server.services.embeddings_service.embedding_model import EmbeddingModel
 from headwater_server.services.embeddings_service.embedding_model_store import EmbeddingModelStore
@@ -31,6 +34,19 @@ async def generate_embeddings_service(request: EmbeddingsRequest) -> EmbeddingsR
         spec = EmbeddingModelStore.get_spec(model)
         prompt = spec.task_map[request.task.value]
 
-    embedding_model = EmbeddingModel(model)
-    new_batch: ChromaBatch = embedding_model.generate_embeddings(batch, prompt=prompt)
+    embedding_model = EmbeddingModel.get(model)
+
+    start = time.monotonic()
+    loop = asyncio.get_running_loop()
+    new_batch: ChromaBatch = await loop.run_in_executor(
+        None, lambda: embedding_model.generate_embeddings(batch, prompt=prompt)
+    )
+    elapsed_ms = (time.monotonic() - start) * 1000
+    logger.info(
+        "embeddings generated: model=%s batch_size=%d duration_ms=%.1f",
+        model,
+        len(batch.documents),
+        elapsed_ms,
+    )
+
     return EmbeddingsResponse(embeddings=new_batch.embeddings)
