@@ -23,10 +23,19 @@ class HeadwaterServer:
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             # Startup
-            logger.info("🚀 Headwater Server starting up...")
+            logger.info("Headwater Server starting up...")
+            from headwater_server.services.embeddings_service.embedding_model_store import EmbeddingModelStore
+            if not EmbeddingModelStore._is_consistent():
+                logger.warning(
+                    "Embedding model specs are inconsistent with registry — run update_embedding_modelstore.",
+                    extra={
+                        "models_in_registry": len(EmbeddingModelStore.list_models()),
+                        "models_in_db": len(EmbeddingModelStore.get_all_specs()),
+                    },
+                )
             yield
             # Shutdown
-            logger.info("🛑 Headwater Server shutting down...")
+            logger.info("Headwater Server shutting down...")
 
         return FastAPI(
             title="Headwater API Server",
