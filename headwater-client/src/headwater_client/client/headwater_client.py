@@ -10,16 +10,15 @@ curated_courses = client.curator.curate(request)
 ```
 """
 
+from __future__ import annotations
+
+from headwater_api.classes import LogsLastResponse, StatusResponse
 from headwater_client.api.conduit_api import ConduitAPI
 from headwater_client.api.curator_api import CuratorAPI
 from headwater_client.api.embeddings_api import EmbeddingsAPI
 from headwater_client.api.reranker_api import RerankerAPI
 from headwater_client.api.siphon_sync_api import SiphonAPI
 from headwater_client.transport.headwater_transport import HeadwaterTransport
-from __future__ import annotations
-
-from headwater_api.classes import LogsLastResponse
-from headwater_api.classes import StatusResponse
 
 
 class HeadwaterClient:
@@ -44,4 +43,5 @@ class HeadwaterClient:
         return self._transport.list_routes()
 
     def get_logs_last(self, n: int = 50) -> LogsLastResponse:
+        """Fetch the last n log entries from the Headwater service."""
         return self._transport.get_logs_last(n)
