@@ -1,14 +1,11 @@
-from headwater_api.classes import load_embedding_models
+from __future__ import annotations
 import logging
+from headwater_api.classes import EmbeddingModelSpec
+from headwater_server.services.embeddings_service.embedding_model_store import EmbeddingModelStore
 
 logger = logging.getLogger(__name__)
 
 
-async def list_embedding_models_service() -> list[str]:
-    """
-    List available embedding models.
-    This function simulates retrieving a list of embedding models.
-    """
-    logger.info("Listing available embedding models.")
-    embedding_models: list[str] = load_embedding_models()
-    return embedding_models
+async def list_embedding_models_service() -> list[EmbeddingModelSpec]:
+    logger.info("Listing available embedding model specs.")
+    return EmbeddingModelStore.get_all_specs()
