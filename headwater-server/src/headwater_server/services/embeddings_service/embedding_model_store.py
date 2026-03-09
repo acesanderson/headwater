@@ -115,7 +115,7 @@ class EmbeddingModelStore:
             logger.info(f"Deleted orphaned spec for {model}")
         for model in to_add:
             provider = cls.identify_provider(model)
-            _self_mod.create_embedding_spec(model, provider)
+            _self_mod.create_embedding_spec(model, provider.value)
             logger.info(f"Created spec for {model} ({provider})")
         if not cls._is_consistent():
             raise ValueError("Specs still inconsistent after update().")
