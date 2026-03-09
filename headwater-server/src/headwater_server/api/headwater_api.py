@@ -1,4 +1,6 @@
-from headwater_api.classes import StatusResponse
+from __future__ import annotations
+
+from headwater_api.classes import StatusResponse, LogsLastResponse
 from fastapi import FastAPI
 import time
 
@@ -42,3 +44,8 @@ class HeadwaterServerAPI:
                         }
                     )
             return route_info
+
+        @self.app.get("/logs/last", response_model=LogsLastResponse)
+        def logs_last(n: int = 50):
+            from headwater_server.server.logging_config import ring_buffer
+            return ring_buffer.get_response(n)
