@@ -1,3 +1,4 @@
+from __future__ import annotations
 from fastapi import FastAPI
 from headwater_api.classes import (
     EmbeddingsRequest,
@@ -5,13 +6,9 @@ from headwater_api.classes import (
     EmbeddingModelSpec,
     QuickEmbeddingRequest,
     QuickEmbeddingResponse,
-    CreateCollectionRequest,
-    CreateCollectionResponse,
     GetCollectionRequest,
     CollectionRecord,
     ListCollectionsResponse,
-    DeleteCollectionRequest,
-    DeleteCollectionResponse,
     QueryCollectionRequest,
     QueryCollectionResponse,
 )
