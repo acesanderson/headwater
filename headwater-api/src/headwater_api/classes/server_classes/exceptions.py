@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 from typing import Any
 from enum import Enum
@@ -43,7 +45,7 @@ class HeadwaterServerError(BaseModel):
     @classmethod
     def from_validation_error(
         cls, exc, request=None, include_traceback: bool = False
-    ) -> "HeadwaterServerError":
+    ) -> HeadwaterServerError:
         """Create error from Pydantic ValidationError"""
         return cls(
             error_type=ErrorType.PYDANTIC_VALIDATION,
@@ -60,7 +62,7 @@ class HeadwaterServerError(BaseModel):
     @classmethod
     def from_http_exception(
         cls, exc, request=None, error_type: ErrorType = ErrorType.INTERNAL_ERROR
-    ) -> "HeadwaterServerError":
+    ) -> HeadwaterServerError:
         """Create error from HTTPException"""
         return cls(
             error_type=error_type,
@@ -79,7 +81,7 @@ class HeadwaterServerError(BaseModel):
         request=None,
         status_code: int = 500,
         include_traceback: bool = True,
-    ) -> "HeadwaterServerError":
+    ) -> HeadwaterServerError:
         """Create error from any exception"""
         return cls(
             error_type=ErrorType.INTERNAL_ERROR,
@@ -93,7 +95,7 @@ class HeadwaterServerError(BaseModel):
             context={"exception_type": type(exc).__name__},
         )
 
-    def add_context(self, key: str, value: Any) -> "HeadwaterServerError":
+    def add_context(self, key: str, value: Any) -> HeadwaterServerError:
         """Add additional context information"""
         if self.context is None:
             self.context = {}
