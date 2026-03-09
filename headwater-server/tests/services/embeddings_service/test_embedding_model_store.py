@@ -33,3 +33,41 @@ def test_identify_provider_found(patched_store):
 def test_identify_provider_not_found_raises(patched_store):
     with pytest.raises(ValueError, match="Provider not found"):
         EmbeddingModelStore.identify_provider("not-a-real-model")
+
+
+# Task 9 — AC8, AC9, AC10: get_spec()
+
+def test_get_spec_unregistered_raises_before_db(patched_store):
+    with patch(
+        "headwater_server.services.embeddings_service.embedding_modelspecs_crud.in_db"
+    ) as mock_in_db:
+        with pytest.raises(ValueError, match="not in the embedding model registry"):
+            EmbeddingModelStore.get_spec("not-a-real-model")
+        mock_in_db.assert_not_called()
+
+
+def test_get_spec_registered_but_no_db_record_raises(patched_store):
+    with pytest.raises(ValueError, match="run update_embedding_modelstore"):
+        EmbeddingModelStore.get_spec("BAAI/bge-m3")
+
+
+from headwater_api.classes import EmbeddingModelSpec
+from headwater_server.services.embeddings_service.embedding_modelspecs_crud import add_embedding_spec
+
+
+def _make_spec(model="BAAI/bge-m3") -> EmbeddingModelSpec:
+    return EmbeddingModelSpec(
+        model=model, provider=EmbeddingProvider.HUGGINGFACE,
+        description="A multilingual embedding model.", embedding_dim=1024,
+        max_seq_length=8192, multilingual=True, parameter_count="568m",
+        prompt_required=False, valid_prefixes=None,
+        prompt_unsupported=False, task_map=None,
+    )
+
+
+def test_get_spec_returns_spec_when_populated(patched_store):
+    add_embedding_spec(_make_spec())
+    result = EmbeddingModelStore.get_spec("BAAI/bge-m3")
+    assert isinstance(result, EmbeddingModelSpec)
+    assert result.model == "BAAI/bge-m3"
+    assert result.embedding_dim == 1024
