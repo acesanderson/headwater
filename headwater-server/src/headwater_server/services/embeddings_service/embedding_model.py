@@ -15,6 +15,11 @@ _DEVICE_CACHE = None
 HUGGINGFACE_API_TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 os.environ["HF_TOKEN"] = HUGGINGFACE_API_TOKEN
 
+_TRUST_REMOTE_CODE_MODELS = {
+    "Alibaba-NLP/gte-large-en-v1.5",
+    "nomic-ai/nomic-embed-text-v1.5",
+}
+
 
 class EmbeddingFunction(Protocol):
     def __call__(
@@ -32,6 +37,7 @@ class EmbeddingModel:
             model_name,
             device=self.device(),
             model_kwargs={"torch_dtype": torch.bfloat16},
+            trust_remote_code=model_name in _TRUST_REMOTE_CODE_MODELS,
         )
 
         self.embedding_function: EmbeddingFunction = self._get_handler(model_name)
