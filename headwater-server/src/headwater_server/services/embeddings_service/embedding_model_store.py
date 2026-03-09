@@ -41,3 +41,20 @@ class EmbeddingModelStore:
     @classmethod
     def is_supported(cls, model: str) -> bool:
         return model in cls.list_models()
+
+    @classmethod
+    def get_spec(cls, model: str) -> EmbeddingModelSpec:
+        from headwater_api.classes import EmbeddingModelSpec
+        from headwater_server.services.embeddings_service.embedding_modelspecs_crud import (
+            get_embedding_spec_by_name,
+            in_db,
+        )
+        if not cls.is_supported(model):
+            raise ValueError(
+                f"Model '{model}' is not in the embedding model registry."
+            )
+        if not in_db(model):
+            raise ValueError(
+                f"Model '{model}' has no spec record — run update_embedding_modelstore."
+            )
+        return get_embedding_spec_by_name(model)
