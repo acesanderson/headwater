@@ -5,7 +5,9 @@
       "Bash(git:*)",
       "Bash(zsh:*)",
       "Bash(python3:*)",
-      "Bash(/Users/bianders/Brian_Code/headwater/headwater-client/.venv/bin/python:*)"
+      "Bash(/Users/bianders/Brian_Code/headwater/headwater-client/.venv/bin/python:*)",
+      "Bash(/Users/bianders/Brian_Code/headwater/.worktrees/debug-logging/.venv/bin/pytest:*)",
+      "Bash(/Users/bianders/Brian_Code/headwater/headwater-server/.venv/bin/pytest:*)"
     ]
   }
 }
