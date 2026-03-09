@@ -1,17 +1,10 @@
 """
-This module configures centralized logging for the Headwater Server with dual output handlers and environment-based log level control. It establishes a Rich console handler for colorized terminal output and a file handler for persistent DEBUG-level logging to the XDG state directory, while the PackagePathFilter enhances readability by reformatting log records to show package names alongside filenames.
+Configures centralized logging for the Headwater Server with three handlers:
+- RichHandler: colorized console output, level controlled by PYTHON_LOG_LEVEL env var (1=WARNING, 2=INFO, 3=DEBUG)
+- TimedRotatingFileHandler: DEBUG-level file logging to the XDG state directory, rotated daily, 30-day retention
+- RingBufferHandler: in-memory ring buffer of the last 500 records, accessible via GET /logs/last
 
-The configuration wires both handlers into the root logger at initialization time, allowing the console output to respect the PYTHON_LOG_LEVEL environment variable (1=WARNING, 2=INFO, 3=DEBUG) while the file handler independently captures all DEBUG and above messages. This dual-level approach enables developers to control verbosity interactively while maintaining detailed audit trails on disk.
-
-Log files are located in the XDG state directory under `headwater_server/logs/server.log`.
-
-Usage:
-```python
-# Simply import to activate logging configuration
-import headwater_server.server.logging_config
-logger = logging.getLogger(__name__)  # Use in any module
-logger.info("Server processing request")  # Appears in console and file
-```
+Log files are located in the XDG state directory under headwater_server/logs/server.log.
 """
 
 from __future__ import annotations
@@ -88,16 +81,15 @@ class RingBufferHandler(logging.Handler):
 
     def get_records(self, n: int) -> list[dict]:
         records = list(self._buffer)
-        sliced = records[-n:] if n < len(records) else records
         return [
             {
                 "timestamp": r.created,
                 "level": r.levelname,
                 "logger": r.name,
                 "message": r.getMessage(),
-                "pathname": getattr(r, "pathname", f"{r.filename}:{r.lineno}"),
+                "pathname": r.pathname,
             }
-            for r in sliced
+            for r in records[-n:]
         ]
 
     def get_response(self, n: int):
