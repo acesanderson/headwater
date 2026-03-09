@@ -58,3 +58,16 @@ class EmbeddingModelStore:
                 f"Model '{model}' has no spec record — run update_embedding_modelstore."
             )
         return get_embedding_spec_by_name(model)
+
+    @classmethod
+    def get_all_specs(cls) -> list[EmbeddingModelSpec]:
+        from headwater_api.classes import EmbeddingModelSpec
+        from headwater_server.services.embeddings_service.embedding_modelspecs_crud import (
+            get_all_embedding_specs,
+        )
+        return get_all_embedding_specs()
+
+    @classmethod
+    def by_provider(cls, provider: EmbeddingProvider) -> list[EmbeddingModelSpec]:
+        from headwater_api.classes import EmbeddingProvider as EP
+        return [s for s in cls.get_all_specs() if s.provider == provider]
