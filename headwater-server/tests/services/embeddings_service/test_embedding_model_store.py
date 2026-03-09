@@ -78,3 +78,66 @@ def test_get_spec_returns_spec_when_populated(patched_store):
 def test_by_provider_empty_when_none_registered(patched_store):
     result = EmbeddingModelStore.by_provider(EmbeddingProvider.OPENAI)
     assert result == []
+
+
+# Task 11 — AC12, AC13, AC14: _is_consistent() and update()
+
+def test_update_adds_new_model_without_overwriting(patched_store, monkeypatch):
+    # Pre-populate bge-m3 in TinyDB
+    add_embedding_spec(_make_spec("BAAI/bge-m3"))
+    original_dump = EmbeddingModelStore.get_spec("BAAI/bge-m3").model_dump()
+
+    # Mock create_embedding_spec so update() doesn't need research module
+    new_spec = _make_spec("BAAI/bge-base-en-v1.5")
+
+    def fake_create(model, provider):
+        add_embedding_spec(new_spec)
+
+    monkeypatch.setattr(
+        "headwater_server.services.embeddings_service.embedding_model_store.create_embedding_spec",
+        fake_create,
+    )
+
+    EmbeddingModelStore.update()
+
+    # A is unchanged
+    after_dump = EmbeddingModelStore.get_spec("BAAI/bge-m3").model_dump()
+    assert original_dump == after_dump
+
+    # B was added
+    result = EmbeddingModelStore.get_spec("BAAI/bge-base-en-v1.5")
+    assert result.model == "BAAI/bge-base-en-v1.5"
+
+
+def test_update_deletes_orphaned_spec(patched_store, monkeypatch):
+    from headwater_server.services.embeddings_service.embedding_modelspecs_crud import in_db
+
+    # Insert an orphan directly into TinyDB (not in registry)
+    orphan = _make_spec("orphaned/model-v1")
+    add_embedding_spec(orphan)
+    assert in_db("orphaned/model-v1")
+
+    # Also pre-populate registry models so update() finds them
+    add_embedding_spec(_make_spec("BAAI/bge-m3"))
+    add_embedding_spec(_make_spec("BAAI/bge-base-en-v1.5"))
+
+    # Mock create_embedding_spec (no new models to add, but need it importable)
+    monkeypatch.setattr(
+        "headwater_server.services.embeddings_service.embedding_model_store.create_embedding_spec",
+        lambda model, provider: None,
+    )
+
+    EmbeddingModelStore.update()
+    assert not in_db("orphaned/model-v1")
+
+
+def test_is_consistent_after_update(patched_store, monkeypatch):
+    def fake_create(model, provider):
+        add_embedding_spec(_make_spec(model))
+
+    monkeypatch.setattr(
+        "headwater_server.services.embeddings_service.embedding_model_store.create_embedding_spec",
+        fake_create,
+    )
+    EmbeddingModelStore.update()
+    assert EmbeddingModelStore._is_consistent()
