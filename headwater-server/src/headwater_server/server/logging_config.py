@@ -1,21 +1,18 @@
 """
-This module configures centralized logging for the Headwater Server with dual output handlers and environment-based log level control. It establishes a Rich console handler for colorized terminal output and a file handler for persistent DEBUG-level logging to the XDG state directory, while the PackagePathFilter enhances readability by reformatting log records to show package names alongside filenames.
+Configures centralized logging for the Headwater Server with three handlers:
+- RichHandler: colorized console output, level controlled by PYTHON_LOG_LEVEL env var (1=WARNING, 2=INFO, 3=DEBUG)
+- TimedRotatingFileHandler: DEBUG-level file logging to the XDG state directory, rotated daily, 30-day retention
+- RingBufferHandler: in-memory ring buffer of the last 500 records, accessible via GET /logs/last
 
-The configuration wires both handlers into the root logger at initialization time, allowing the console output to respect the PYTHON_LOG_LEVEL environment variable (1=WARNING, 2=INFO, 3=DEBUG) while the file handler independently captures all DEBUG and above messages. This dual-level approach enables developers to control verbosity interactively while maintaining detailed audit trails on disk.
-
-Log files are located in the XDG state directory under `headwater_server/logs/server.log`.
-
-Usage:
-```python
-# Simply import to activate logging configuration
-import headwater_server.server.logging_config
-logger = logging.getLogger(__name__)  # Use in any module
-logger.info("Server processing request")  # Appears in console and file
-```
+Log files are located in the XDG state directory under headwater_server/logs/server.log.
 """
 
+from __future__ import annotations
+
+import collections
 import logging
 import os
+from logging.handlers import TimedRotatingFileHandler
 from xdg_base_dirs import (
     xdg_state_home,
 )
@@ -58,7 +55,12 @@ log_dir = xdg_state_home() / "headwater_server" / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
 log_file = log_dir / "server.log"
 
-file_handler = logging.FileHandler(log_file, encoding="utf-8")
+file_handler = TimedRotatingFileHandler(
+    log_file,
+    when='midnight',
+    backupCount=30,
+    encoding='utf-8',
+)
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(
     logging.Formatter(
@@ -67,10 +69,47 @@ file_handler.setFormatter(
     )
 )
 
+
+class RingBufferHandler(logging.Handler):
+    def __init__(self, capacity: int = 500):
+        super().__init__()
+        self.capacity = capacity
+        self._buffer: collections.deque = collections.deque(maxlen=capacity)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self._buffer.append(record)
+
+    def get_records(self, n: int) -> list[dict]:
+        if n <= 0:
+            return []
+        records = list(self._buffer)
+        return [
+            {
+                "timestamp": r.created,
+                "level": r.levelname,
+                "logger": r.name,
+                "message": r.getMessage(),
+                "pathname": r.pathname,
+            }
+            for r in records[-n:]
+        ]
+
+    def get_response(self, n: int):
+        from headwater_api.classes import LogsLastResponse, LogEntry
+        entries = [LogEntry(**e) for e in self.get_records(n)]
+        return LogsLastResponse(
+            entries=entries,
+            total_buffered=len(self._buffer),
+            capacity=self.capacity,
+        )
+
+
+ring_buffer = RingBufferHandler(capacity=500)
+
 # --- Root logger wiring ---
 logging.basicConfig(
     level=logging.DEBUG,  # allow DEBUG to reach handlers; handlers filter individually
-    handlers=[rich_handler, file_handler],
+    handlers=[rich_handler, file_handler, ring_buffer],
 )
 
 logger = logging.getLogger(__name__)

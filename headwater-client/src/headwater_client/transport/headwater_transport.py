@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from headwater_api.classes import (
     HeadwaterServerError,
     HeadwaterServerException,
+    LogsLastResponse,
     StatusResponse,
 )
 from dbclients.discovery.host import get_network_context
@@ -110,13 +113,8 @@ class HeadwaterTransport:
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error requesting {full_url}: {e}")
-            # Raise a specific custom exception for network errors
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Network error requesting {full_url}: {e}")
             raise HeadwaterServerException(
                 HeadwaterServerError(
-                    # FIX: change to lowercase to match Enum values
                     error_type="network_error",
                     message=str(e),
                     status_code=503,
@@ -210,3 +208,8 @@ class HeadwaterTransport:
         )
         response.raise_for_status()
         return response.json()
+
+    def get_logs_last(self, n: int = 50) -> LogsLastResponse:
+        """Fetch the last n log entries from the server."""
+        response = self._request("GET", f"/logs/last?n={n}")
+        return LogsLastResponse.model_validate_json(response)
