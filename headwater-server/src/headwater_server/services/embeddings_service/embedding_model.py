@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from typing import Protocol
 
 import torch
@@ -12,6 +13,8 @@ from headwater_server.services.embeddings_service.embedding_model_store import E
 
 logger = logging.getLogger(__name__)
 _DEVICE_CACHE = None
+_model_cache: dict[str, EmbeddingModel] = {}
+_cache_lock = threading.Lock()
 HUGGINGFACE_API_TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 os.environ["HF_TOKEN"] = HUGGINGFACE_API_TOKEN
 
@@ -98,6 +101,24 @@ class EmbeddingModel:
         if _DEVICE_CACHE is None:
             _DEVICE_CACHE = "cuda" if torch.cuda.is_available() else "cpu"
         return _DEVICE_CACHE
+
+    @classmethod
+    def get(cls, model_name: str) -> EmbeddingModel:
+        if model_name not in _model_cache:
+            with _cache_lock:
+                if model_name not in _model_cache:
+                    logger.info("embedding model loading: %s", model_name)
+                    try:
+                        _model_cache[model_name] = cls(model_name)
+                    except Exception as e:
+                        logger.error("Failed to instantiate EmbeddingModel '%s': %s", model_name, e)
+                        raise
+                    logger.info("embedding model cached: %s", model_name)
+                else:
+                    logger.info("embedding model cache hit: %s", model_name)
+        else:
+            logger.info("embedding model cache hit: %s", model_name)
+        return _model_cache[model_name]
 
     def generate_embeddings(
         self, batch: ChromaBatch, prompt: str | None = None
