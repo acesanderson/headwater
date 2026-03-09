@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run:*)",
+      "Bash(git:*)",
+      "Bash(zsh:*)",
+      "Bash(python3:*)",
+      "Bash(/Users/bianders/Brian_Code/headwater/headwater-client/.venv/bin/python:*)"
+    ]
+  }
+}
