@@ -1,5 +1,4 @@
 from headwater_api.classes import (
-    load_embedding_models,
     GetCollectionRequest,
     CollectionRecord,
     CreateCollectionRequest,
