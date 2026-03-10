@@ -12,6 +12,8 @@ curated_courses = client.curator.curate(request)
 
 from __future__ import annotations
 
+from typing import Literal
+
 from headwater_api.classes import LogsLastResponse, StatusResponse
 from headwater_client.api.conduit_api import ConduitAPI
 from headwater_client.api.curator_api import CuratorAPI
@@ -22,8 +24,8 @@ from headwater_client.transport.headwater_transport import HeadwaterTransport
 
 
 class HeadwaterClient:
-    def __init__(self):
-        self._transport = HeadwaterTransport()
+    def __init__(self, host_alias: Literal["headwater", "bywater"] = "headwater"):
+        self._transport = HeadwaterTransport(host_alias=host_alias)
         self.conduit = ConduitAPI(self._transport)
         self.curator = CuratorAPI(self._transport)
         self.embeddings = EmbeddingsAPI(self._transport)
