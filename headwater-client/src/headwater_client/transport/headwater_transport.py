@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 # Constants
 HEADWATER_SERVER_DEFAULT_PORT = 8080
-HEADWATER_SERVER_IP = get_network_context().siphon_server
 
 
 class HeadwaterTransport:
@@ -33,7 +32,8 @@ class HeadwaterTransport:
 
     def _get_url(self) -> str:
         """Get HeadwaterServer URL with same host detection logic as PostgreSQL"""
-        return f"http://{HEADWATER_SERVER_IP}:{HEADWATER_SERVER_DEFAULT_PORT}"
+        ctx = get_network_context()
+        return f"http://{ctx.siphon_server}:{HEADWATER_SERVER_DEFAULT_PORT}"
 
     def _handle_error_response(self, response: requests.Response) -> None:
         """Parse HeadwaterServerError from response and raise appropriate exception"""
