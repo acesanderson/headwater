@@ -85,3 +85,15 @@ def test_get_status_service_receives_server_name():
         client.get("/status")
 
     assert captured_args["server_name"] == "Bywater API Server"
+
+
+def test_bywater_module_app_has_correct_title():
+    """AC-9: The bywater module exposes an `app` with title 'Bywater API Server'."""
+    from headwater_server.server.bywater import app
+    assert app.title == "Bywater API Server"
+
+
+def test_bywater_main_is_importable():
+    """AC-9: bywater_main.main is importable (entry point target exists)."""
+    from headwater_server.server.bywater_main import main
+    assert callable(main)
