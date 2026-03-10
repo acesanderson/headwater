@@ -72,22 +72,33 @@ run(
     lambda: client.reranker.list_reranker_models(),
 )
 
-run(
-    "reranker.rerank",
-    lambda: client.reranker.rerank(
-        RerankRequest(
-            query="machine learning fundamentals",
-            documents=[
-                "Introduction to neural networks and deep learning.",
-                "Cooking recipes for pasta dishes.",
-                "Supervised learning with decision trees.",
-                "The history of the Roman Empire.",
-                "Gradient descent optimization techniques.",
-            ],
-            k=3,
-        )
-    ),
-)
+_rerank_query = "machine learning fundamentals"
+_rerank_docs = [
+    "Introduction to neural networks and deep learning.",
+    "Cooking recipes for pasta dishes.",
+    "Supervised learning with decision trees.",
+    "The history of the Roman Empire.",
+    "Gradient descent optimization techniques.",
+]
+
+try:
+    _reranker_models = client.reranker.list_reranker_models()
+except Exception as e:
+    _reranker_models = []
+    results.append(("reranker.list_reranker_models (fetch)", FAIL, f"{type(e).__name__}: {e}"))
+
+for _model_info in _reranker_models:
+    run(
+        f"reranker.rerank[{_model_info.name}]",
+        lambda m=_model_info.name: client.reranker.rerank(
+            RerankRequest(
+                query=_rerank_query,
+                documents=_rerank_docs,
+                model_name=m,
+                k=3,
+            )
+        ),
+    )
 
 # --- Curator ---
 

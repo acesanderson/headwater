@@ -7,7 +7,29 @@
       "Bash(python3:*)",
       "Bash(/Users/bianders/Brian_Code/headwater/headwater-client/.venv/bin/python:*)",
       "Bash(/Users/bianders/Brian_Code/headwater/.worktrees/debug-logging/.venv/bin/pytest:*)",
-      "Bash(/Users/bianders/Brian_Code/headwater/headwater-server/.venv/bin/pytest:*)"
+      "Bash(/Users/bianders/Brian_Code/headwater/headwater-server/.venv/bin/pytest:*)",
+      "Bash(cd /Users/bianders/Brian_Code/dbclients-project && /opt/homebrew/bin/git add src/dbclients/discovery/host.py && /opt/homebrew/bin/git commit -m \"chore\\(dbclients\\): mark bywater_server placeholder with TODO for Task 2\")",
+      "Bash(/opt/homebrew/bin/git -C /Users/bianders/Brian_Code/dbclients-project add src/dbclients/discovery/host.py && /opt/homebrew/bin/git -C /Users/bianders/Brian_Code/dbclients-project commit -m \"chore\\(dbclients\\): mark bywater_server placeholder with TODO for Task 2\")",
+      "Bash(/usr/bin/git -C /Users/bianders/Brian_Code/dbclients-project add src/dbclients/discovery/host.py && /usr/bin/git -C /Users/bianders/Brian_Code/dbclients-project commit -m \"chore\\(dbclients\\): mark bywater_server placeholder with TODO for Task 2\")",
+      "Bash(cd /Users/bianders/Brian_Code/dbclients-project && python -m pytest tests/discovery/test_host.py -v 2>&1)",
+      "Bash(/usr/bin/env python3:*)",
+      "Bash(cd /Users/bianders/Brian_Code/dbclients-project && source .venv/bin/activate && python -m pytest tests/discovery/test_host.py -v)",
+      "Bash(/Users/bianders/Brian_Code/dbclients-project/.venv/bin/python -m pytest /Users/bianders/Brian_Code/dbclients-project/tests/discovery/test_host.py -v)",
+      "Bash(/Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client/.venv/bin/pytest /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client/tests/transport/test_transport.py::test_sync_transport_defers_resolution -v 2>&1)",
+      "Bash(uv venv:*)",
+      "Bash(uv pip:*)",
+      "Bash(cd /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client && python -m pytest tests/transport/test_transport.py -v 2>&1)",
+      "Bash(cd /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater && bash -c 'cd headwater-client && python -m pytest tests/transport/test_transport.py -v')",
+      "Bash(python -m pytest .worktrees/feature/bywater/headwater-client/tests/transport/test_transport.py -v 2>&1 | head -100)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 -m pytest .worktrees/feature/bywater/headwater-client/tests/transport/test_transport.py -v 2>&1 | head -50)",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client && uv run pytest tests/transport/test_transport.py -v\")",
+      "Bash(cd /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client && /opt/homebrew/bin/python -m pytest tests/client/ -v)",
+      "Bash(python -m pytest /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client/tests/client/ -v)",
+      "Bash(which python3:*)",
+      "Bash(/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 -m pytest /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client/tests/client/ -v)",
+      "Bash(/Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/.venv/bin/python -m pytest /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client/tests/client/ -v)",
+      "Bash(export SHELL=/bin/bash && cd /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater && python -m pytest headwater-client/tests/client/ -v)",
+      "Bash(cd /Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater && /usr/bin/python3 -m pytest headwater-client/tests/client/ -v 2>&1)"
     ]
   }
 }
