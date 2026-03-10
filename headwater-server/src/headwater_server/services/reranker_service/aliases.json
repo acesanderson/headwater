@@ -5,7 +5,7 @@
   "mxbai":   "mixedbread-ai/mxbai-rerank-large-v1",
   "ce":      "cross-encoder",
   "colbert": "colbert",
-  "llm":     "llm-layerwise",
+  "llm":     "BAAI/bge-reranker-large",
   "t5":      "t5",
   "jina":    "jina-reranker-v2-base-multilingual",
   "cohere":  "cohere",
