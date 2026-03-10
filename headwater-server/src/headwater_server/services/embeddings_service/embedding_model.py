@@ -129,11 +129,12 @@ class EmbeddingModel:
         if model_name not in _model_cache:
             with _cache_lock:
                 if model_name not in _model_cache:
-                    # Evict all other models from GPU before loading the new one.
-                    # Keeps peak VRAM usage to one model at a time.
+                    # Evict all other models before loading the new one.
+                    # Drop references only — do NOT call .cpu() as that races
+                    # with any in-flight inference still running in the executor.
+                    # CUDA memory is freed once refcount drops to zero.
                     for name in list(_model_cache.keys()):
                         logger.info("evicting model from GPU: %s", name)
-                        _model_cache[name]._st_model.cpu()
                         del _model_cache[name]
                     torch.cuda.empty_cache()
 
