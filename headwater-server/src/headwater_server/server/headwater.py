@@ -57,7 +57,7 @@ class HeadwaterServer:
         EmbeddingsServerAPI(self.app).register_routes()
         CuratorServerAPI(self.app).register_routes()
         SiphonServerAPI(self.app).register_routes()
-        HeadwaterServerAPI(self.app).register_routes()
+        HeadwaterServerAPI(self.app, server_name=self._name).register_routes()
         RerankerServerAPI(self.app).register_routes()
 
     def _register_middleware(self):

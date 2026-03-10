@@ -8,13 +8,15 @@ startup_time = time.time()
 
 
 class HeadwaterServerAPI:
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI, server_name: str = "Headwater API Server"):
         self.app: FastAPI = app
+        self._server_name = server_name
 
     def register_routes(self):
         """
         Register all routes for default headwater server.
         """
+        server_name = self._server_name  # capture for closure
 
         @self.app.get("/ping")
         def ping():
@@ -26,7 +28,7 @@ class HeadwaterServerAPI:
                 get_status_service,
             )
 
-            return await get_status_service(startup_time)
+            return await get_status_service(startup_time, server_name=server_name)
 
         @self.app.get("/routes")
         def list_routes():
