@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from headwater_api.classes import (
     HeadwaterServerError,
     HeadwaterServerException,
@@ -23,7 +25,12 @@ class HeadwaterTransport:
     Transport layer for communicating with HeadwaterServer.
     """
 
-    def __init__(self, base_url: str = ""):
+    def __init__(
+        self,
+        base_url: str = "",
+        host_alias: Literal["headwater", "bywater"] = "headwater",
+    ):
+        self._host_alias = host_alias
         if base_url == "":
             self.base_url: str = self._get_url()
         else:
@@ -33,7 +40,10 @@ class HeadwaterTransport:
     def _get_url(self) -> str:
         """Get HeadwaterServer URL with same host detection logic as PostgreSQL"""
         ctx = get_network_context()
-        return f"http://{ctx.siphon_server}:{HEADWATER_SERVER_DEFAULT_PORT}"
+        ip = ctx.bywater_server if self._host_alias == "bywater" else ctx.siphon_server
+        url = f"http://{ip}:{HEADWATER_SERVER_DEFAULT_PORT}"
+        logger.debug(f"[{self._host_alias}] resolved to {ip}:{HEADWATER_SERVER_DEFAULT_PORT}")
+        return url
 
     def _handle_error_response(self, response: requests.Response) -> None:
         """Parse HeadwaterServerError from response and raise appropriate exception"""
