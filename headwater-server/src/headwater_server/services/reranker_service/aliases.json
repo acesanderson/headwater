@@ -8,5 +8,5 @@
   "llm":     "BAAI/bge-reranker-large",
   "t5":      "t5",
   "jina":    "jina-reranker-v2-base-multilingual",
-  "cohere":  "cohere",
+  "cohere":  "cohere"
 }
