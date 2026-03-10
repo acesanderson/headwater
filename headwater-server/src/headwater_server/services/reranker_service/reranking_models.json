@@ -7,5 +7,4 @@
   "t5":                                   { "model_type": "t5",            "output_type": "logits"  },
   "jina-reranker-v2-base-multilingual":   { "model_type": "jina", "api_key_env": "JINA_API_KEY",    "output_type": "bounded" },
   "cohere":                               { "model_type": "cohere", "api_key_env": "COHERE_API_KEY", "lang": "en", "output_type": "bounded" },
-  "rankllm":                              { "model_type": "rankllm", "api_key_env": "OPENAI_API_KEY",  "output_type": "logits"  }
 }
