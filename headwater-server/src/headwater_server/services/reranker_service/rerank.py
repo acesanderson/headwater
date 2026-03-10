@@ -47,7 +47,7 @@ async def run_rerank(request: RerankRequest) -> RerankResponse:
 
     loop = asyncio.get_running_loop()
     ranked = await loop.run_in_executor(
-        None, lambda: ranker.rank(query=request.query, docs=docs_text, max_length=request.max_length)
+        None, lambda: ranker.rank(query=request.query, docs=docs_text)
     )
 
     top_results = ranked.top_k(effective_k)

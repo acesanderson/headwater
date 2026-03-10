@@ -49,6 +49,8 @@ class EmbeddingModel:
         match model_name:
             case "google/embeddinggemma-300m":
                 return self._gemma_handler
+            case "BAAI/bge-m3":
+                return self._bge_m3_handler
             case name if "bge-" in name:
                 return self._bge_handler
             case "nomic-ai/nomic-embed-text-v1.5":
@@ -74,6 +76,15 @@ class EmbeddingModel:
             batch_size=64,
             convert_to_tensor=False,
         ).tolist()
+
+    def _bge_m3_handler(
+        self, documents: list[str], prompt: str | None = None
+    ) -> list[list[float]]:
+        # BGE-M3 is XLM-RoBERTa based with 8192-token context — activations are large.
+        kwargs: dict = {"batch_size": 16, "convert_to_tensor": False}
+        if prompt is not None:
+            kwargs["prompt"] = prompt
+        return self._st_model.encode(documents, **kwargs).tolist()
 
     def _bge_handler(
         self, documents: list[str], prompt: str | None = None

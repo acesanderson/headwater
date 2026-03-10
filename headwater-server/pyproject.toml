@@ -20,7 +20,7 @@ dependencies = [
     "conduit",
     "pytest-asyncio>=1.2.0",
     "streamlit>=1.54.0",
-    "rerankers[flashrank]>=0.10.0",
+    "rerankers[flashrank,api]>=0.10.0",
     "einops>=0.8.2",
 ]
 
