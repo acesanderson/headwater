@@ -14,17 +14,20 @@ logger = logging.getLogger(__name__)
 
 
 class HeadwaterServer:
-    def __init__(self):
+    def __init__(self, name: str = "Headwater API Server"):
+        self._name = name
         self.app: FastAPI = self._create_app()
         self._register_routes()
         self._register_middleware()
         self._register_error_handlers()
 
     def _create_app(self) -> FastAPI:
+        name = self._name  # capture for closure
+
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             # Startup
-            logger.info("Headwater Server starting up...")
+            logger.info(f"{name} starting up...")
             from headwater_server.services.embeddings_service.embedding_model_store import EmbeddingModelStore
             if not EmbeddingModelStore._is_consistent():
                 logger.warning(
@@ -36,10 +39,10 @@ class HeadwaterServer:
                 )
             yield
             # Shutdown
-            logger.info("Headwater Server shutting down...")
+            logger.info(f"{name} shutting down...")
 
         return FastAPI(
-            title="Headwater API Server",
+            title=self._name,
             description="Universal content ingestion and LLM processing API",
             version="1.0.0",
             lifespan=lifespan,
