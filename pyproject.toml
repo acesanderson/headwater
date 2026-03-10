@@ -1,3 +1,22 @@
+[tool.uv.workspace]
+members = ["headwater-api", "headwater-client", "headwater-server"]
+
+[tool.uv.sources]
+dbclients = { path = "../../../../dbclients-project", editable = true }
+headwater_api = { workspace = true }
+headwater_client = { workspace = true }
+headwater_server = { workspace = true }
+siphon_api = { path = "../../../../siphon/siphon-api", editable = true }
+siphon_server = { path = "../../../../siphon/siphon-server", editable = true }
+conduit = { path = "../../../../conduit-project", editable = true }
+kramer = { path = "../../../../kramer-project", editable = true }
+
+[tool.uv]
+override-dependencies = [
+    "headwater-api @ file:///Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-api",
+    "headwater-client @ file:///Users/bianders/Brian_Code/headwater/.worktrees/feature/bywater/headwater-client",
+]
+
 [tool.pytest.ini_options]
 markers = [
     "parser: Parser strategy tests",
