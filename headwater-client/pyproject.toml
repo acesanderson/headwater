@@ -29,6 +29,6 @@ include = ["src/headwater_client/py.typed"]
 
 # ── uv sources (local/editable deps) ───────────────────────────────────────────
 [tool.uv.sources]
-dbclients = { path = "../../dbclients-project", editable = true }
-headwater_api = { path = "../headwater-api", editable = true }
-siphon_api = { path = "../../siphon/siphon-api", editable = true }
+dbclients = { path = "../../../../../dbclients-project", editable = true }
+headwater_api = { workspace = true }
+siphon_api = { path = "../../../../../siphon/siphon-api", editable = true }

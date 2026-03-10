@@ -14,6 +14,10 @@ class StatusResponse(BaseModel):
     models_available: list[str] = Field(..., description="Available models by provider")
     gpu_enabled: bool = Field(..., description="Whether GPU acceleration is available")
     uptime: float | None = Field(None, description="Server uptime in seconds")
+    server_name: str = Field(
+        default="Headwater API Server",
+        description="Name of the server instance (e.g. 'Headwater API Server', 'Bywater API Server')",
+    )
 
 
 class PingResponse(BaseModel):

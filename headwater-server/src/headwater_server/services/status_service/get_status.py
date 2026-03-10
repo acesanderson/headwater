@@ -9,7 +9,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def get_status_service(startup_time: float) -> StatusResponse:
+async def get_status_service(
+    startup_time: float,
+    server_name: str = "Headwater API Server",
+) -> StatusResponse:
     try:
         logger.info("Retrieving server status...")
 
@@ -67,6 +70,7 @@ async def get_status_service(startup_time: float) -> StatusResponse:
             message="Server is running",
             models_available=models_available,
             uptime=uptime,
+            server_name=server_name,
         )
     except Exception as e:
         return StatusResponse(
@@ -75,4 +79,5 @@ async def get_status_service(startup_time: float) -> StatusResponse:
             message=f"Error retrieving status: {str(e)}",
             models_available={},
             uptime=None,
+            server_name=server_name,
         )

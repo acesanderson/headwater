@@ -19,6 +19,10 @@ finally:
 ```
 """
 
+from __future__ import annotations
+
+from typing import Literal
+
 from headwater_client.api.conduit_async_api import ConduitAsyncAPI
 from headwater_client.api.curator_async_api import CuratorAsyncAPI
 from headwater_client.api.embeddings_async_api import EmbeddingsAsyncAPI
@@ -30,8 +34,12 @@ from headwater_api.classes import StatusResponse
 
 
 class HeadwaterAsyncClient:
-    def __init__(self, base_url: str = ""):
-        self._transport = HeadwaterAsyncTransport(base_url)
+    def __init__(
+        self,
+        base_url: str = "",
+        host_alias: Literal["headwater", "bywater"] = "headwater",
+    ):
+        self._transport = HeadwaterAsyncTransport(base_url=base_url, host_alias=host_alias)
         self.conduit = ConduitAsyncAPI(self._transport)
         self.curator = CuratorAsyncAPI(self._transport)
         self.embeddings = EmbeddingsAsyncAPI(self._transport)
