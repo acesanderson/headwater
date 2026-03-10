@@ -107,6 +107,14 @@ class EmbeddingModel:
         if model_name not in _model_cache:
             with _cache_lock:
                 if model_name not in _model_cache:
+                    # Evict all other models from GPU before loading the new one.
+                    # Keeps peak VRAM usage to one model at a time.
+                    for name in list(_model_cache.keys()):
+                        logger.info("evicting model from GPU: %s", name)
+                        _model_cache[name]._st_model.cpu()
+                        del _model_cache[name]
+                    torch.cuda.empty_cache()
+
                     logger.info("embedding model loading: %s", model_name)
                     try:
                         _model_cache[model_name] = cls(model_name)
