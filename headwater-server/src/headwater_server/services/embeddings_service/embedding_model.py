@@ -55,6 +55,8 @@ class EmbeddingModel:
                 return self._bge_handler
             case "nomic-ai/nomic-embed-text-v1.5":
                 return self._nomic_handler
+            case "Alibaba-NLP/gte-large-en-v1.5":
+                return self._gte_large_handler
             case _:
                 return self._default_handler
 
@@ -98,6 +100,15 @@ class EmbeddingModel:
         self, documents: list[str], prompt: str | None = None
     ) -> list[list[float]]:
         # Nomic uses a 2048-token context window; reduce GPU batch size to avoid OOM.
+        kwargs: dict = {"batch_size": 32, "convert_to_tensor": False}
+        if prompt is not None:
+            kwargs["prompt"] = prompt
+        return self._st_model.encode(documents, **kwargs).tolist()
+
+    def _gte_large_handler(
+        self, documents: list[str], prompt: str | None = None
+    ) -> list[list[float]]:
+        # GTE-large: custom gated MLP, 8192-token context — reduce batch size to avoid OOM.
         kwargs: dict = {"batch_size": 32, "convert_to_tensor": False}
         if prompt is not None:
             kwargs["prompt"] = prompt

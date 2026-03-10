@@ -10,5 +10,6 @@ class RerankerAsyncAPI(BaseAsyncAPI):
         return RerankResponse.model_validate_json(response)
 
     async def list_reranker_models(self) -> list[RerankerModelInfo]:
+        import json
         response = await self._request("GET", "/reranker/models")
-        return [RerankerModelInfo.model_validate(m) for m in response]
+        return [RerankerModelInfo.model_validate(m) for m in json.loads(response)]
