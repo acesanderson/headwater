@@ -23,6 +23,12 @@ class BatchRequest(BaseModel):
         default=None, description="Single jinja2 string for the request."
     )
 
+    # Concurrency control
+    max_concurrent: int | None = Field(
+        default=8,
+        description="Max concurrent Ollama requests. Prevents queue flooding and ReadTimeout on large batches.",
+    )
+
     # Standard request fields
     params: GenerationParams
     options: ConduitOptions

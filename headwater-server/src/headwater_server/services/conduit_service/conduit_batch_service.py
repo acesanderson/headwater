@@ -33,6 +33,7 @@ async def conduit_batch_service(
             prompt_strings_list=None,
             params=batch.params,
             options=batch.options,
+            max_concurrent=batch.max_concurrent,
         )
     else:
         results: list[Conversation] = await conduit.run(
@@ -40,6 +41,7 @@ async def conduit_batch_service(
             input_variables_list=None,
             params=batch.params,
             options=batch.options,
+            max_concurrent=batch.max_concurrent,
         )
 
     return BatchResponse(results=results)
