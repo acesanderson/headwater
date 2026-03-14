@@ -1,14 +1,20 @@
 from __future__ import annotations
-from fastapi import FastAPI
+
+import logging
+import time
+import uuid
+from collections.abc import Callable
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi import Request
+from fastapi import Response
 from headwater_server.api.conduit_server_api import ConduitServerAPI
 from headwater_server.api.embeddings_server_api import EmbeddingsServerAPI
 from headwater_server.api.curator_server_api import CuratorServerAPI
 from headwater_server.api.siphon_server_api import SiphonServerAPI
 from headwater_server.api.headwater_api import HeadwaterServerAPI
 from headwater_server.api.reranker_server_api import RerankerServerAPI
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +68,57 @@ class HeadwaterServer:
 
     def _register_middleware(self):
         """
-        Configure middleware.
+        Configure middleware. Correlation middleware is registered via @app.middleware("http")
+        and runs before CORSMiddleware (which is added last via add_middleware).
         """
         from fastapi.middleware.cors import CORSMiddleware
+        from headwater_server.server.context import request_id_var
+
+        @self.app.middleware("http")
+        async def correlation_middleware(request: Request, call_next: Callable) -> Response:
+            header_value = request.headers.get("X-Request-ID", "")
+            try:
+                parsed = uuid.UUID(header_value)
+                assert parsed.version == 4
+                request_id = header_value
+            except (ValueError, AttributeError, AssertionError):
+                request_id = str(uuid.uuid4())
+
+            request.state.request_id = request_id
+            token = request_id_var.set(request_id)
+            start = time.monotonic()
+            status_code = 500
+
+            logger.info(
+                "request_started",
+                extra={
+                    "request_id": request_id,
+                    "path": request.url.path,
+                    "method": request.method,
+                },
+            )
+
+            response: Response | None = None
+            try:
+                response = await call_next(request)
+                status_code = response.status_code
+            finally:
+                duration_ms = round((time.monotonic() - start) * 1000, 1)
+                logger.info(
+                    "request_finished",
+                    extra={
+                        "request_id": request_id,
+                        "path": request.url.path,
+                        "method": request.method,
+                        "status_code": status_code,
+                        "duration_ms": duration_ms,
+                    },
+                )
+                request_id_var.reset(token)
+
+            if response is not None:
+                response.headers["X-Request-ID"] = request_id
+            return response
 
         self.app.add_middleware(
             CORSMiddleware,
