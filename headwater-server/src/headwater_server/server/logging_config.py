@@ -35,6 +35,25 @@ class PackagePathFilter(logging.Filter):
         return True
 
 
+class RequestIdFilter(logging.Filter):
+    """Injects the current request_id from context into every LogRecord."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        from headwater_server.server.context import request_id_var
+        record.request_id = request_id_var.get()
+        return True
+
+
+_orig_record_factory = logging.getLogRecordFactory()
+
+
+def _request_id_record_factory(*args, **kwargs):
+    record = _orig_record_factory(*args, **kwargs)
+    from headwater_server.server.context import request_id_var
+    record.request_id = request_id_var.get()
+    return record
+
+
 # --- Log level from env (still numeric, as you had) ---
 log_level = int(os.getenv("PYTHON_LOG_LEVEL", "2"))  # 1=WARNING, 2=INFO, 3=DEBUG
 levels = {1: logging.WARNING, 2: logging.INFO, 3: logging.DEBUG}
@@ -112,5 +131,10 @@ logging.basicConfig(
     level=logging.DEBUG,  # allow DEBUG to reach handlers; handlers filter individually
     handlers=[rich_handler, file_handler, ring_buffer],
 )
+
+# Inject request_id into every record via record factory (works for all loggers, including child loggers)
+logging.setLogRecordFactory(_request_id_record_factory)
+# Also add filter to root logger for direct root-logger calls
+logging.getLogger().addFilter(RequestIdFilter())
 
 logger = logging.getLogger(__name__)
