@@ -26,10 +26,10 @@ def test_request_id_var_default_is_system():
     assert request_id_var.get() == "system"
 
 
-def test_request_id_filter_injects_into_log_record(caplog):
+def test_request_id_injected_into_log_record(caplog):
     """AC-5: Every log record carries request_id='system' outside a request context."""
     import logging
-    import headwater_server.server.logging_config  # ensure filter is registered
+    import headwater_server.server.logging_config  # ensure record factory is registered
 
     with caplog.at_level(logging.INFO, logger="test.sentinel"):
         logging.getLogger("test.sentinel").info("startup event")

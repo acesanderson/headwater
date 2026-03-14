@@ -4,6 +4,9 @@ Configures centralized logging for the Headwater Server with three handlers:
 - TimedRotatingFileHandler: DEBUG-level file logging to the XDG state directory, rotated daily, 30-day retention
 - RingBufferHandler: in-memory ring buffer of the last 500 records, accessible via GET /logs/last
 
+Request ID injection: Every LogRecord receives a request_id attribute via setLogRecordFactory,
+which reads the current value from the request_id_var ContextVar (defaults to "system").
+
 Log files are located in the XDG state directory under headwater_server/logs/server.log.
 """
 
@@ -32,15 +35,6 @@ class PackagePathFilter(logging.Filter):
         new_basename = f"{record.root_package}:{original_basename}"
         original_dirname = os.path.dirname(record.pathname)
         record.pathname = os.path.join(original_dirname, new_basename)
-        return True
-
-
-class RequestIdFilter(logging.Filter):
-    """Injects the current request_id from context into every LogRecord."""
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        from headwater_server.server.context import request_id_var
-        record.request_id = request_id_var.get()
         return True
 
 
@@ -134,7 +128,5 @@ logging.basicConfig(
 
 # Inject request_id into every record via record factory (works for all loggers, including child loggers)
 logging.setLogRecordFactory(_request_id_record_factory)
-# Also add filter to root logger for direct root-logger calls
-logging.getLogger().addFilter(RequestIdFilter())
 
 logger = logging.getLogger(__name__)
