@@ -47,6 +47,7 @@ rich_handler = RichHandler(
     markup=True,
     console=console,
 )
+rich_handler.setFormatter(logging.Formatter("%(message)s"))
 rich_handler.addFilter(PackagePathFilter())
 rich_handler.setLevel(root_level)  # console level
 
