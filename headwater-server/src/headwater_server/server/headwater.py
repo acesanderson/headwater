@@ -102,6 +102,28 @@ class HeadwaterServer:
             try:
                 response = await call_next(request)
                 status_code = response.status_code
+            except Exception as exc:
+                # Starlette 0.49 re-raises exceptions from _exception_handler.py
+                # even after exception handlers send a response. That response is
+                # discarded by BaseHTTPMiddleware's send_no_error. Rebuild it here
+                # so we can attach the X-Request-ID header. Inner handlers already
+                # logged the error; don't log again.
+                import traceback as _tb
+                from fastapi.responses import JSONResponse
+                from headwater_api.classes import HeadwaterServerError, ErrorType
+                error = HeadwaterServerError(
+                    error_type=ErrorType.INTERNAL_ERROR,
+                    message=f"Internal server error: {str(exc)}",
+                    status_code=500,
+                    path=request.url.path,
+                    method=request.method,
+                    request_id=request_id,
+                    original_exception=str(exc),
+                    traceback=_tb.format_exc(),
+                    context={"exception_type": type(exc).__name__},
+                )
+                response = JSONResponse(status_code=500, content=error.model_dump())
+                status_code = 500
             finally:
                 duration_ms = round((time.monotonic() - start) * 1000, 1)
                 logger.info(
