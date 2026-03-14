@@ -38,3 +38,22 @@ def test_request_id_injected_into_log_record(caplog):
     record = caplog.records[-1]
     assert hasattr(record, "request_id"), "request_id not injected into LogRecord"
     assert record.request_id == "system"
+
+
+def test_third_party_loggers_suppressed_at_warning():
+    """AC-9: Noisy third-party loggers are set to WARNING; uvicorn.error is untouched."""
+    import logging
+    import headwater_server.server.logging_config
+
+    suppressed = ["httpx", "httpcore", "sentence_transformers", "conduit", "uvicorn.access"]
+    for name in suppressed:
+        level = logging.getLogger(name).level
+        assert level == logging.WARNING, (
+            f"Logger '{name}' has level {logging.getLevelName(level)}, expected WARNING"
+        )
+
+    # uvicorn.error must NOT be suppressed
+    uvicorn_error_level = logging.getLogger("uvicorn.error").level
+    assert uvicorn_error_level != logging.WARNING, (
+        "uvicorn.error must not be suppressed — it reports worker crashes"
+    )

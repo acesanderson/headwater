@@ -129,4 +129,16 @@ logging.basicConfig(
 # Inject request_id into every record via record factory (works for all loggers, including child loggers)
 logging.setLogRecordFactory(_request_id_record_factory)
 
+# Silence third-party loggers. Hardcoded — not configurable.
+# uvicorn.error is intentionally excluded: it reports worker crashes.
+SUPPRESSED_LOGGERS = [
+    "httpx",
+    "httpcore",
+    "sentence_transformers",
+    "conduit",
+    "uvicorn.access",
+]
+for _name in SUPPRESSED_LOGGERS:
+    logging.getLogger(_name).setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
