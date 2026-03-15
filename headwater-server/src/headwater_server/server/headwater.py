@@ -6,6 +6,8 @@ import uuid
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 
+import headwater_server.server.logging_config  # noqa: F401 — must import to wire handlers and ring_buffer
+
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi import Response
@@ -92,7 +94,6 @@ class HeadwaterServer:
             logger.info(
                 "request_started",
                 extra={
-                    "request_id": request_id,
                     "path": request.url.path,
                     "method": request.method,
                 },
@@ -129,7 +130,6 @@ class HeadwaterServer:
                 logger.info(
                     "request_finished",
                     extra={
-                        "request_id": request_id,
                         "path": request.url.path,
                         "method": request.method,
                         "status_code": status_code,

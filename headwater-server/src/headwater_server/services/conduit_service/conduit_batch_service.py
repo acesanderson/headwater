@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from headwater_api.classes import BatchRequest
 from headwater_api.classes import BatchResponse
-from headwater_server.server.context import request_id_var
 
 if TYPE_CHECKING:
     from conduit.domain.conversation.conversation import Conversation
@@ -20,7 +19,6 @@ async def conduit_batch_service(batch: BatchRequest) -> BatchResponse:
 
     model = batch.params.model
     n = len(batch.prompt_strings_list or batch.input_variables_list or [])
-    request_id = request_id_var.get()
 
     logger.info(
         "batch_started",
@@ -28,7 +26,6 @@ async def conduit_batch_service(batch: BatchRequest) -> BatchResponse:
             "model": model,
             "n": n,
             "max_concurrent": batch.max_concurrent,
-            "request_id": request_id,
         },
     )
 
@@ -69,7 +66,6 @@ async def conduit_batch_service(batch: BatchRequest) -> BatchResponse:
                     "model": model,
                     "index": i,
                     "error_type": type(result).__name__,
-                    "request_id": request_id,
                 },
                 exc_info=result,
             )
@@ -86,7 +82,6 @@ async def conduit_batch_service(batch: BatchRequest) -> BatchResponse:
             "succeeded": succeeded,
             "failed": failed,
             "duration_ms": duration_ms,
-            "request_id": request_id,
         },
     )
 

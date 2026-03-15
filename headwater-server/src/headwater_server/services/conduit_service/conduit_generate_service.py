@@ -5,7 +5,6 @@ import time
 
 from headwater_api.classes import GenerationRequest
 from headwater_api.classes import GenerationResponse
-from headwater_server.server.context import request_id_var
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,6 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
         extra={
             "model": model,
             "prompt_preview": prompt_preview,
-            "request_id": request_id_var.get(),
         },
     )
 
@@ -65,7 +63,6 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
                 "model": model,
                 "duration_ms": round((time.monotonic() - start) * 1000, 1),
                 "error_type": type(exc).__name__,
-                "request_id": request_id_var.get(),
             },
             exc_info=True,
         )
@@ -78,7 +75,6 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
                 "model": model,
                 "duration_ms": round((time.monotonic() - start) * 1000, 1),
                 "error_type": "MissingMetadata",
-                "request_id": request_id_var.get(),
             },
         )
         raise RuntimeError("ResponseMetadata missing from conduit response")
@@ -94,7 +90,6 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
                 "input_tokens": meta.input_tokens,
                 "output_tokens": meta.output_tokens,
                 "cache_hit": meta.cache_hit,
-                "request_id": request_id_var.get(),
             },
         )
     else:
@@ -107,7 +102,6 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
                 "output_tokens": meta.output_tokens,
                 "stop_reason": str(meta.stop_reason),
                 "cache_hit": meta.cache_hit,
-                "request_id": request_id_var.get(),
             },
         )
 

@@ -8,6 +8,7 @@ class LogEntry(BaseModel):
     logger: str
     message: str
     pathname: str
+    request_id: str | None = None
 
 
 class LogsLastResponse(BaseModel):

@@ -104,6 +104,7 @@ class RingBufferHandler(logging.Handler):
                 "logger": r.name,
                 "message": r.getMessage(),
                 "pathname": r.pathname,
+                "request_id": r.__dict__.get("request_id", None),
             }
             for r in records[-n:]
         ]
@@ -121,10 +122,12 @@ class RingBufferHandler(logging.Handler):
 ring_buffer = RingBufferHandler(capacity=500)
 
 # --- Root logger wiring ---
-logging.basicConfig(
-    level=logging.DEBUG,  # allow DEBUG to reach handlers; handlers filter individually
-    handlers=[rich_handler, file_handler, ring_buffer],
-)
+# Use explicit addHandler instead of basicConfig — basicConfig is a no-op when
+# handlers already exist (e.g. when pytest has configured logging first).
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+for _handler in [rich_handler, file_handler, ring_buffer]:
+    root_logger.addHandler(_handler)
 
 # Inject request_id into every record via record factory (works for all loggers, including child loggers)
 logging.setLogRecordFactory(_request_id_record_factory)
