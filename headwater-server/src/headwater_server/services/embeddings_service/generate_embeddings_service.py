@@ -16,7 +16,7 @@ async def generate_embeddings_service(request: EmbeddingsRequest) -> EmbeddingsR
     model: str = request.model
     batch: ChromaBatch = request.batch
 
-    logger.info(
+    logger.debug(
         "Generating embeddings",
         extra={
             "model": model,

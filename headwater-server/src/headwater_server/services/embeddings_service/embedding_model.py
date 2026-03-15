@@ -145,7 +145,7 @@ class EmbeddingModel:
                     # with any in-flight inference still running in the executor.
                     # CUDA memory is freed once refcount drops to zero.
                     for name in list(_model_cache.keys()):
-                        logger.info("evicting model from GPU: %s", name)
+                        logger.warning("evicting model from GPU: %s", name)
                         del _model_cache[name]
                     torch.cuda.empty_cache()
 
@@ -157,9 +157,9 @@ class EmbeddingModel:
                         raise
                     logger.info("embedding model cached: %s", model_name)
                 else:
-                    logger.info("embedding model cache hit: %s", model_name)
+                    logger.debug("embedding model cache hit: %s", model_name)
         else:
-            logger.info("embedding model cache hit: %s", model_name)
+            logger.debug("embedding model cache hit: %s", model_name)
         return _model_cache[model_name]
 
     def generate_embeddings(
