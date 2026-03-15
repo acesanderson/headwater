@@ -15,7 +15,17 @@
       "Bash(source:*)",
       "Read(//Users/bianders/Brian_Code/headwater/**)",
       "Bash(VIRTUAL_ENV=/Users/bianders/Brian_Code/headwater/headwater-api/.venv uv run:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_logging_config.py::test_rich_handler_format_is_message_only -v -p no:pdb\")",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && python3 -c \\\\\"import logging; import headwater_server.server.logging_config; print\\([type\\(h\\).__name__ for h in logging.getLogger\\(\\).handlers]\\)\\\\\"\")",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_logging_config.py::test_rich_handler_format_is_message_only -v -p no:pdb 2>&1 | tail -30\")",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_logging_config.py::test_rich_handler_format_is_message_only -v -p no:pdb 2>&1 | tail -35\")",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && git add src/headwater_server/server/logging_config.py tests/server/test_logging_config.py && git commit -m 'fix: set RichHandler formatter to message-only to eliminate double INFO prefix'\")",
+      "Bash(cd:*)",
+      "Bash(bash -c 'cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_logging_config.py::test_third_party_loggers_suppressed_at_warning -v -p no:pdb')",
+      "Bash(bash -c 'cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_logging_config.py::test_third_party_loggers_suppressed_at_warning -v --tb=short' 2>&1 | grep -A 10 'FAILED\\\\|test_third')",
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/services/embeddings_service/test_embedding_model_logging.py -v -p no:pdb 2>&1\")",
+      "Bash(bash -c 'cd /Users/bianders/Brian_Code/headwater/headwater-server && PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/server/test_logging_config.py::test_third_party_loggers_suppressed_at_warning -v --pdb=no 2>&1 | tail -20')"
     ]
   }
 }
