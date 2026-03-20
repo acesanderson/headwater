@@ -36,7 +36,10 @@ class HeadwaterServer:
         async def lifespan(app: FastAPI):
             # Startup
             logger.info(f"{name} starting up...")
-            from headwater_server.services.embeddings_service.embedding_model_store import EmbeddingModelStore
+            from headwater_server.services.embeddings_service.embedding_model_store import (
+                EmbeddingModelStore,
+            )
+
             if not EmbeddingModelStore._is_consistent():
                 logger.warning(
                     "Embedding model specs are inconsistent with registry — run update_embedding_modelstore.",
@@ -77,7 +80,9 @@ class HeadwaterServer:
         from headwater_server.server.context import request_id_var
 
         @self.app.middleware("http")
-        async def correlation_middleware(request: Request, call_next: Callable) -> Response:
+        async def correlation_middleware(
+            request: Request, call_next: Callable
+        ) -> Response:
             header_value = request.headers.get("X-Request-ID", "")
             try:
                 parsed = uuid.UUID(header_value)
@@ -91,7 +96,7 @@ class HeadwaterServer:
             start = time.monotonic()
             status_code = 500
 
-            logger.info(
+            logger.debug(
                 "request_started",
                 extra={
                     "path": request.url.path,
@@ -112,6 +117,7 @@ class HeadwaterServer:
                 import traceback as _tb
                 from fastapi.responses import JSONResponse
                 from headwater_api.classes import HeadwaterServerError, ErrorType
+
                 error = HeadwaterServerError(
                     error_type=ErrorType.INTERNAL_ERROR,
                     message=f"Internal server error: {str(exc)}",
@@ -127,7 +133,7 @@ class HeadwaterServer:
                 status_code = 500
             finally:
                 duration_ms = round((time.monotonic() - start) * 1000, 1)
-                logger.info(
+                logger.debug(
                     "request_finished",
                     extra={
                         "path": request.url.path,
