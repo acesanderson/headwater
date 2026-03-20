@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 async def conduit_batch_service(batch: BatchRequest) -> BatchResponse:
     from conduit.core.conduit.batch.conduit_batch_async import ConduitBatchAsync
+    from conduit.batch import Verbosity
     from conduit.core.prompt.prompt import Prompt
 
     model = batch.params.model
@@ -28,6 +29,9 @@ async def conduit_batch_service(batch: BatchRequest) -> BatchResponse:
             "max_concurrent": batch.max_concurrent,
         },
     )
+
+    # Set Verbosity to silent
+    batch.options.verbosity = Verbosity.SILENT
 
     conduit = ConduitBatchAsync(
         prompt=Prompt(batch.prompt_str) if batch.prompt_str else None,
