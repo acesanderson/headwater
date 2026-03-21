@@ -43,6 +43,11 @@ async def conduit_generate_service(request: GenerationRequest) -> GenerationResp
 
     model = params.model
     preview_content = messages[0].content if messages else ""
+    if isinstance(preview_content, list):
+        preview_content = " ".join(
+            item.text if hasattr(item, "text") else "[image]"
+            for item in preview_content
+        )
     prompt_preview = (preview_content or "")[:80] + "..."
 
     logger.info(
