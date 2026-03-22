@@ -123,7 +123,7 @@ async def conduit_openai_service(request: OpenAIChatRequest) -> dict:
             content = json.dumps(result.message.parsed)
     else:
         content = str(result.message)
-        if not content:
+        if not content and result.metadata.stop_reason != StopReason.LENGTH:
             logger.error("Model returned empty response: model=%s", model_name)
             raise HTTPException(status_code=500, detail="Model returned an empty response.")
 
