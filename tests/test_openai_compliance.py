@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import httpx
 
@@ -29,7 +29,6 @@ MODEL = sys.argv[2] if len(sys.argv) > 2 else "gpt-oss:latest"
 PASS = "\033[32mPASS\033[0m"
 FAIL = "\033[31mFAIL\033[0m"
 WARN = "\033[33mWARN\033[0m"
-INFO = "\033[34mINFO\033[0m"
 
 
 @dataclass
@@ -63,190 +62,163 @@ def post(path: str, payload: dict, **kwargs) -> httpx.Response:
     return httpx.post(f"{BASE_URL}{path}", json=payload, timeout=30, **kwargs)
 
 
+def chat_payload(**overrides) -> dict:
+    return {
+        "model": MODEL,
+        "messages": [{"role": "user", "content": "Say hello."}],
+        "max_tokens": 16,
+        **overrides,
+    }
+
+
 # ---------------------------------------------------------------------------
 # 1. Basic connectivity
 # ---------------------------------------------------------------------------
 
-@check("GET /ping (server alive)", required=True)
+@check("GET /ping")
 def _():
     r = get("/ping")
-    ok = r.status_code == 200
-    return Result("GET /ping (server alive)", ok, True,
-                  detail=f"HTTP {r.status_code}")
+    return Result("GET /ping", r.status_code == 200, True, detail=f"HTTP {r.status_code}")
 
 
-@check("GET /status (server status)", required=False)
+@check("GET /status", required=False)
 def _():
     r = get("/status")
-    ok = r.status_code == 200
-    return Result("GET /status (server status)", ok, False,
-                  detail=f"HTTP {r.status_code}")
+    return Result("GET /status", r.status_code == 200, False, detail=f"HTTP {r.status_code}")
 
 
 # ---------------------------------------------------------------------------
-# 2. Standard OpenAI paths (what clients like OpenClaw probe)
+# 2. Required OpenAI-compatible endpoints
 # ---------------------------------------------------------------------------
 
-@check("GET /v1/models (OpenAI standard path)", required=True)
+@check("GET /v1/models returns 200 with model list")
 def _():
     r = get("/v1/models")
-    ok = r.status_code == 200
-    snippet = r.text[:200] if not ok else ""
-    return Result("GET /v1/models (OpenAI standard path)", ok, True,
-                  detail=f"HTTP {r.status_code}",
-                  response_snippet=snippet)
-
-
-@check("POST /v1/chat/completions (OpenAI standard path)", required=True)
-def _():
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": "Say hello."}],
-        "max_tokens": 16,
-    }
-    r = post("/v1/chat/completions", payload)
-    ok = r.status_code == 200
-    snippet = r.text[:300] if not ok else r.text[:300]
-    return Result("POST /v1/chat/completions (OpenAI standard path)", ok, True,
-                  detail=f"HTTP {r.status_code}",
-                  response_snippet=snippet)
-
-
-# ---------------------------------------------------------------------------
-# 3. Actual Bywater/Headwater paths
-# ---------------------------------------------------------------------------
-
-@check("POST /v1/chat/completions with headwater/ prefix (Headwater model naming)", required=False)
-def _():
-    payload = {
-        "model": f"headwater/{MODEL}",
-        "messages": [{"role": "user", "content": "Say hello."}],
-        "max_tokens": 16,
-    }
-    r = post("/v1/chat/completions", payload)
-    ok = r.status_code == 200
-    snippet = r.text[:300]
-    return Result("POST /v1/chat/completions with headwater/ prefix (Headwater model naming)", ok, False,
-                  detail=f"HTTP {r.status_code}",
-                  response_snippet=snippet)
-
-
-# ---------------------------------------------------------------------------
-# 4. Response shape validation (if /v1/chat/completions returned 200)
-# ---------------------------------------------------------------------------
-
-@check("Response has required OpenAI fields", required=True)
-def _():
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": "Say hello."}],
-        "max_tokens": 16,
-    }
-    r = post("/v1/chat/completions", payload)
     if r.status_code != 200:
-        return Result("Response has required OpenAI fields", False, True,
+        return Result("GET /v1/models returns 200 with model list", False, True,
+                      detail=f"HTTP {r.status_code}",
+                      response_snippet=r.text[:300])
+    body = r.json()
+    ok = body.get("object") == "list" and isinstance(body.get("data"), list)
+    detail = f"object={body.get('object')!r}, {len(body.get('data', []))} models" if ok else "unexpected shape"
+    return Result("GET /v1/models returns 200 with model list", ok, True,
+                  detail=detail,
+                  response_snippet="" if ok else json.dumps(body)[:300])
+
+
+@check("POST /v1/chat/completions returns 200")
+def _():
+    r = post("/v1/chat/completions", chat_payload())
+    ok = r.status_code == 200
+    return Result("POST /v1/chat/completions returns 200", ok, True,
+                  detail=f"HTTP {r.status_code}",
+                  response_snippet=r.text[:300] if not ok else "")
+
+
+# ---------------------------------------------------------------------------
+# 3. Response shape
+# ---------------------------------------------------------------------------
+
+@check("Response is valid JSON with required fields")
+def _():
+    r = post("/v1/chat/completions", chat_payload())
+    if r.status_code != 200:
+        return Result("Response is valid JSON with required fields", False, True,
                       detail="Skipped — endpoint returned non-200")
     try:
         body = r.json()
     except Exception:
-        return Result("Response has required OpenAI fields", False, True,
+        return Result("Response is valid JSON with required fields", False, True,
                       detail="Response is not valid JSON")
 
-    required_fields = ["id", "object", "created", "model", "choices"]
-    missing = [f for f in required_fields if f not in body]
+    missing = [f for f in ["id", "object", "created", "model", "choices"] if f not in body]
     choices_ok = (
         isinstance(body.get("choices"), list)
         and len(body["choices"]) > 0
         and "message" in body["choices"][0]
     )
     passed = not missing and choices_ok
-    detail = f"Missing: {missing}" if missing else ("choices[0].message missing" if not choices_ok else "All required fields present")
-    return Result("Response has required OpenAI fields", passed, True,
+    if missing:
+        detail = f"Missing top-level fields: {missing}"
+    elif not choices_ok:
+        detail = "choices[0].message missing or choices is empty"
+    else:
+        detail = "All required fields present"
+    return Result("Response is valid JSON with required fields", passed, True,
                   detail=detail,
                   response_snippet=json.dumps(body, indent=2)[:400] if not passed else "")
 
 
-@check("Response object type is 'chat.completion'", required=True)
+@check("object == 'chat.completion'")
 def _():
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": "Say hello."}],
-        "max_tokens": 16,
-    }
-    r = post("/v1/chat/completions", payload)
+    r = post("/v1/chat/completions", chat_payload())
     if r.status_code != 200:
-        return Result("Response object type is 'chat.completion'", False, True,
-                      detail="Skipped — endpoint returned non-200")
-    body = r.json()
-    obj = body.get("object", "")
-    passed = obj == "chat.completion"
-    return Result("Response object type is 'chat.completion'", passed, True,
+        return Result("object == 'chat.completion'", False, True, detail="Skipped — non-200")
+    obj = r.json().get("object", "")
+    return Result("object == 'chat.completion'", obj == "chat.completion", True,
                   detail=f"object={obj!r}")
 
 
-@check("choices[0].finish_reason is present", required=False)
+@check("model echoed in response")
 def _():
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": "Say hello."}],
-        "max_tokens": 16,
-    }
-    r = post("/v1/chat/completions", payload)
+    r = post("/v1/chat/completions", chat_payload())
     if r.status_code != 200:
-        return Result("choices[0].finish_reason is present", False, False,
-                      detail="Skipped — endpoint returned non-200")
-    body = r.json()
-    choices = body.get("choices", [])
-    if not choices:
-        return Result("choices[0].finish_reason is present", False, False, detail="No choices")
-    passed = "finish_reason" in choices[0]
-    return Result("choices[0].finish_reason is present", passed, False,
-                  detail=f"finish_reason={choices[0].get('finish_reason')!r}")
+        return Result("model echoed in response", False, True, detail="Skipped — non-200")
+    got = r.json().get("model", "")
+    passed = got == MODEL
+    return Result("model echoed in response", passed, True,
+                  detail=f"sent={MODEL!r} got={got!r}")
 
 
-@check("usage block present (prompt/completion/total tokens)", required=False)
+@check("choices[0].finish_reason present", required=False)
 def _():
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": "Say hello."}],
-        "max_tokens": 16,
-    }
-    r = post("/v1/chat/completions", payload)
+    r = post("/v1/chat/completions", chat_payload())
     if r.status_code != 200:
-        return Result("usage block present", False, False,
-                      detail="Skipped — endpoint returned non-200")
-    body = r.json()
-    usage = body.get("usage", {})
-    required = {"prompt_tokens", "completion_tokens", "total_tokens"}
-    missing = required - set(usage.keys())
+        return Result("choices[0].finish_reason present", False, False, detail="Skipped — non-200")
+    choices = r.json().get("choices", [])
+    passed = bool(choices) and "finish_reason" in choices[0]
+    return Result("choices[0].finish_reason present", passed, False,
+                  detail=f"finish_reason={choices[0].get('finish_reason')!r}" if choices else "no choices")
+
+
+@check("usage block has prompt/completion/total_tokens", required=False)
+def _():
+    r = post("/v1/chat/completions", chat_payload())
+    if r.status_code != 200:
+        return Result("usage block has prompt/completion/total_tokens", False, False, detail="Skipped — non-200")
+    usage = r.json().get("usage", {})
+    missing = {"prompt_tokens", "completion_tokens", "total_tokens"} - set(usage.keys())
     passed = not missing
-    return Result("usage block present (prompt/completion/total tokens)", passed, False,
-                  detail=f"Missing usage fields: {missing}" if missing else "All usage fields present")
+    return Result("usage block has prompt/completion/total_tokens", passed, False,
+                  detail=f"Missing: {missing}" if missing else "All usage fields present")
 
 
 # ---------------------------------------------------------------------------
-# 5. Model name handling
+# 4. Error handling
 # ---------------------------------------------------------------------------
 
-@check("Plain model name accepted (no 'headwater/' prefix)", required=True)
+@check("Unknown model returns 4xx")
 def _():
-    payload = {
-        "model": MODEL,
-        "messages": [{"role": "user", "content": "hi"}],
-        "max_tokens": 8,
-    }
-    r = post("/v1/chat/completions", payload)
-    passed = r.status_code == 200
-    return Result("Plain model name accepted (no 'headwater/' prefix)", passed, True,
-                  detail=f"HTTP {r.status_code} for model={MODEL!r}",
+    r = post("/v1/chat/completions", chat_payload(model="definitely-not-a-real-model-xyz"))
+    passed = 400 <= r.status_code < 500
+    return Result("Unknown model returns 4xx", passed, True,
+                  detail=f"HTTP {r.status_code}",
                   response_snippet=r.text[:200] if not passed else "")
+
+
+@check("Empty messages rejected", required=False)
+def _():
+    r = post("/v1/chat/completions", {"model": MODEL, "messages": []})
+    passed = r.status_code in (400, 422)
+    return Result("Empty messages rejected", passed, False,
+                  detail=f"HTTP {r.status_code}")
 
 
 # ---------------------------------------------------------------------------
 # Report
 # ---------------------------------------------------------------------------
 
-def report():
+def report() -> int:
     print(f"\nOpenAI Compliance Check — {BASE_URL}")
     print(f"Model under test: {MODEL}")
     print("=" * 70)
@@ -270,9 +242,8 @@ def report():
                 print(f"             > {line}")
 
     print("=" * 70)
-    total = len(results)
     passed = sum(1 for r in results if r.passed)
-    print(f"\n{passed}/{total} checks passed. Required failures: {required_failures}")
+    print(f"\n{passed}/{len(results)} checks passed. Required failures: {required_failures}")
 
     if required_failures:
         print("\nDiagnosis:")
