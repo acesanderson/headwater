@@ -9,12 +9,12 @@ from tests.conftest import VALID_PAYLOAD, make_mock_result
 
 def test_unrecognized_model_returns_400(client):
     """AC10: unrecognized model name after prefix strip -> HTTP 400"""
-    bad_payload = {**VALID_PAYLOAD, "model": "headwater/nonexistent-model-xyz"}
+    bad_payload = {**VALID_PAYLOAD, "model": "nonexistent-model-xyz"}
     with patch(
         "conduit.core.model.models.modelstore.ModelStore.validate_model",
         side_effect=ValueError("Model not found"),
     ):
-        response = client.post("/conduit/v1/chat/completions", json=bad_payload)
+        response = client.post("/v1/chat/completions", json=bad_payload)
     assert response.status_code == 400
     assert "nonexistent-model-xyz" in response.json()["detail"]
 
@@ -25,7 +25,7 @@ def test_model_store_unavailable_returns_502(client):
         "conduit.core.model.models.modelstore.ModelStore.validate_model",
         side_effect=FileNotFoundError("aliases.json not found"),
     ):
-        response = client.post("/conduit/v1/chat/completions", json=VALID_PAYLOAD)
+        response = client.post("/v1/chat/completions", json=VALID_PAYLOAD)
     assert response.status_code == 502
     assert "Model store unavailable" in response.json()["detail"]
 
@@ -39,7 +39,7 @@ def test_valid_request_returns_200_and_validates_as_chat_completion(client):
         mock_instance = MagicMock()
         mock_instance.query = AsyncMock(return_value=mock_result)
         MockModel.return_value = mock_instance
-        response = client.post("/conduit/v1/chat/completions", json=VALID_PAYLOAD)
+        response = client.post("/v1/chat/completions", json=VALID_PAYLOAD)
     assert response.status_code == 200
     ChatCompletion.model_validate(response.json())
 
@@ -52,7 +52,7 @@ def test_response_content_is_non_empty_string(client):
         mock_instance = MagicMock()
         mock_instance.query = AsyncMock(return_value=mock_result)
         MockModel.return_value = mock_instance
-        response = client.post("/conduit/v1/chat/completions", json=VALID_PAYLOAD)
+        response = client.post("/v1/chat/completions", json=VALID_PAYLOAD)
     content = response.json()["choices"][0]["message"]["content"]
     assert isinstance(content, str)
     assert len(content) > 0
@@ -68,7 +68,7 @@ def test_finish_reason_is_valid_value(client):
         mock_instance = MagicMock()
         mock_instance.query = AsyncMock(return_value=mock_result)
         MockModel.return_value = mock_instance
-        response = client.post("/conduit/v1/chat/completions", json=VALID_PAYLOAD)
+        response = client.post("/v1/chat/completions", json=VALID_PAYLOAD)
     finish_reason = response.json()["choices"][0]["finish_reason"]
     assert finish_reason in VALID_FINISH_REASONS
 
@@ -81,7 +81,7 @@ def test_usage_total_equals_prompt_plus_completion(client):
         mock_instance = MagicMock()
         mock_instance.query = AsyncMock(return_value=mock_result)
         MockModel.return_value = mock_instance
-        response = client.post("/conduit/v1/chat/completions", json=VALID_PAYLOAD)
+        response = client.post("/v1/chat/completions", json=VALID_PAYLOAD)
     usage = response.json()["usage"]
     assert usage["prompt_tokens"] == 42
     assert usage["completion_tokens"] == 17
@@ -89,14 +89,14 @@ def test_usage_total_equals_prompt_plus_completion(client):
 
 
 def test_response_model_echoes_request_model(client):
-    """AC5: response.model is identical to request.model including 'headwater/' prefix"""
+    """AC5: response.model is identical to request.model"""
     mock_result = make_mock_result()
     with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="claude-sonnet-4-6"), \
          patch("conduit.core.model.model_async.ModelAsync") as MockModel:
         mock_instance = MagicMock()
         mock_instance.query = AsyncMock(return_value=mock_result)
         MockModel.return_value = mock_instance
-        response = client.post("/conduit/v1/chat/completions", json=VALID_PAYLOAD)
+        response = client.post("/v1/chat/completions", json=VALID_PAYLOAD)
     assert response.json()["model"] == VALID_PAYLOAD["model"]
 
 
@@ -125,7 +125,7 @@ def test_structured_output_returns_valid_json_content(client):
         mock_instance = MagicMock()
         mock_instance.query = AsyncMock(return_value=mock_result)
         MockModel.return_value = mock_instance
-        response = client.post("/conduit/v1/chat/completions", json=payload)
+        response = client.post("/v1/chat/completions", json=payload)
 
     assert response.status_code == 200
     content = response.json()["choices"][0]["message"]["content"]
@@ -152,7 +152,7 @@ def test_structured_output_parsed_none_returns_500(client):
         mock_instance = MagicMock()
         mock_instance.query = AsyncMock(return_value=mock_result)
         MockModel.return_value = mock_instance
-        response = client.post("/conduit/v1/chat/completions", json=payload)
+        response = client.post("/v1/chat/completions", json=payload)
 
     assert response.status_code == 500
     assert "Structured output failed" in response.json()["detail"]

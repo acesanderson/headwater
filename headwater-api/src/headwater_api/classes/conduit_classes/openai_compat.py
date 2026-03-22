@@ -1,5 +1,4 @@
 from __future__ import annotations
-import re
 from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -45,10 +44,6 @@ class OpenAIChatRequest(BaseModel):
     use_cache: bool = True
 
     @property
-    def conduit_model(self) -> str:
-        return self.model.removeprefix("headwater/")
-
-    @property
     def normalized_stop(self) -> list[str] | None:
         if isinstance(self.stop, str):
             return [self.stop]
@@ -58,11 +53,6 @@ class OpenAIChatRequest(BaseModel):
     def _validate_request(self) -> OpenAIChatRequest:
         if self.stream:
             raise ValueError("Streaming is not supported on this endpoint.")
-        if not re.fullmatch(r"headwater/.+", self.model):
-            raise ValueError(
-                "model must be 'headwater/<model_name>' with a non-empty model name. "
-                f"Got: {self.model!r}"
-            )
         for msg in self.messages:
             if msg.role == "tool" and msg.tool_call_id is None:
                 raise ValueError("tool_call_id is required for messages with role='tool'.")

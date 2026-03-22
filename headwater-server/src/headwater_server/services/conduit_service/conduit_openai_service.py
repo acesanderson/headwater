@@ -32,7 +32,7 @@ async def conduit_openai_service(request: OpenAIChatRequest) -> dict:
 
     # 1. Validate model
     try:
-        model_name = ModelStore.validate_model(request.conduit_model)
+        model_name = ModelStore.validate_model(request.model)
     except FileNotFoundError as exc:
         logger.error("Model store unavailable: %s", exc)
         raise HTTPException(
@@ -42,7 +42,7 @@ async def conduit_openai_service(request: OpenAIChatRequest) -> dict:
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
-            detail=f"Unrecognized model: '{request.conduit_model}'. Check ModelStore for supported models.",
+            detail=f"Unrecognized model: '{request.model}'. Check ModelStore for supported models.",
         ) from exc
 
     # 2. Reject messages-only-system edge case

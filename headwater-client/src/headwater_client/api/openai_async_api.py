@@ -11,7 +11,7 @@ class OpenAICompatAsyncAPI(BaseAsyncAPI):
         from openai.types.chat import ChatCompletion
         response = await self._request(
             "POST",
-            "/conduit/v1/chat/completions",
+            "/v1/chat/completions",
             json_payload=request.model_dump_json(by_alias=True),
         )
         return ChatCompletion.model_validate_json(response)

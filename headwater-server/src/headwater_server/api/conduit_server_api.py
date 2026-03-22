@@ -45,7 +45,7 @@ class ConduitServerAPI:
 
             return await conduit_tokenize_service(request)
 
-        @self.app.post("/conduit/v1/chat/completions")
+        @self.app.post("/v1/chat/completions")
         async def conduit_openai_chat(request: OpenAIChatRequest) -> dict:
             from headwater_server.services.conduit_service.conduit_openai_service import (
                 conduit_openai_service,

@@ -29,7 +29,7 @@ def make_mock_result(
 
 
 VALID_PAYLOAD = {
-    "model": "headwater/claude-sonnet-4-6",
+    "model": "claude-sonnet-4-6",
     "messages": [{"role": "user", "content": "Hello"}],
 }
 
