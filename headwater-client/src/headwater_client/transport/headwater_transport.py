@@ -28,7 +28,7 @@ class HeadwaterTransport:
     def __init__(
         self,
         base_url: str = "",
-        host_alias: Literal["headwater", "bywater"] = "headwater",
+        host_alias: Literal["headwater", "bywater", "backwater"] = "headwater",
     ):
         self._host_alias = host_alias
         if base_url == "":
@@ -40,9 +40,21 @@ class HeadwaterTransport:
     def _get_url(self) -> str:
         """Get HeadwaterServer URL with same host detection logic as PostgreSQL"""
         ctx = get_network_context()
-        ip = ctx.bywater_server if self._host_alias == "bywater" else ctx.siphon_server
+        match self._host_alias:
+            case "headwater":
+                ip = ctx.headwater_server
+            case "bywater":
+                ip = ctx.bywater_server
+            case "backwater":
+                ip = ctx.backwater_server
+            case _:
+                raise ValueError(
+                    f"Invalid host_alias '{self._host_alias}'. Must be 'headwater', 'bywater', or 'backwater'."
+                )
         url = f"http://{ip}:{HEADWATER_SERVER_DEFAULT_PORT}"
-        logger.debug(f"[{self._host_alias}] resolved to {ip}:{HEADWATER_SERVER_DEFAULT_PORT}")
+        logger.debug(
+            f"[{self._host_alias}] resolved to {ip}:{HEADWATER_SERVER_DEFAULT_PORT}"
+        )
         return url
 
     def _handle_error_response(self, response: requests.Response) -> None:

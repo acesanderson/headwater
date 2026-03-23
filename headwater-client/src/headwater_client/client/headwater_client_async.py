@@ -37,9 +37,11 @@ class HeadwaterAsyncClient:
     def __init__(
         self,
         base_url: str = "",
-        host_alias: Literal["headwater", "bywater"] = "headwater",
+        host_alias: Literal["headwater", "bywater", "backwater"] = "headwater",
     ):
-        self._transport = HeadwaterAsyncTransport(base_url=base_url, host_alias=host_alias)
+        self._transport = HeadwaterAsyncTransport(
+            base_url=base_url, host_alias=host_alias
+        )
         self.conduit = ConduitAsyncAPI(self._transport)
         self.curator = CuratorAsyncAPI(self._transport)
         self.embeddings = EmbeddingsAsyncAPI(self._transport)
