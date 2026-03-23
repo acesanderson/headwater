@@ -44,15 +44,20 @@ def run_server(mode: str = "headwater"):
     sys.stdout.write(f"\033[{header_height + 1};1H")
     sys.stdout.flush()
 
-    uvicorn.run(
-        "headwater_server.server.headwater:app",
-        host="0.0.0.0",
-        port=8080,
-        reload=True,
-        reload_dirs=[str(Path(__file__).parent.parent.parent)],
-        log_config=None,
-        log_level="info",
-    )
+    try:
+        uvicorn.run(
+            "headwater_server.server.headwater:app",
+            host="0.0.0.0",
+            port=8080,
+            reload=True,
+            reload_dirs=[str(Path(__file__).parent.parent.parent)],
+            log_config=None,
+            log_level="info",
+        )
+    finally:
+        # Reset scrolling region to default when exiting
+        sys.stdout.write("\033[r")
+        sys.stdout.flush()
 
 
 def main():
