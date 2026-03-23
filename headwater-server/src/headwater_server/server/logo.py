@@ -1,5 +1,7 @@
-def print_logo():
-    # print("\033[95m")  # Magenta
+from typing import Literal
+
+
+def print_headwater_logo():
     # dark blue
     print("\033[94m")
     print("""
@@ -14,9 +16,9 @@ def print_logo():
 
 
 def print_bywater_logo():
-    print("\033[92m")  # Green — distinct from Headwater's blue (\033[94m)
+    print("\033[33m")  # Yellow
     print("""
-    ██████╗ ██╗   ██╗██╗    ██╗ █████╗ ████████╗███████╗██████╗
+    ██████╗ ██╗   ██╗██╗    ██╗ █████╗ ████████╗███████╗██████╗ 
     ██╔══██╗╚██╗ ██╔╝██║    ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗
     ██████╔╝ ╚████╔╝ ██║ █╗ ██║███████║   ██║   █████╗  ██████╔╝
     ██╔══██╗  ╚██╔╝  ██║███╗██║██╔══██║   ██║   ██╔══╝  ██╔══██╗
@@ -26,5 +28,31 @@ def print_bywater_logo():
     print("\033[0m")  # Reset
 
 
+def print_backwater_logo():
+    print("\033[92m")  # Green
+    print("""
+    ██████╗  █████╗  ██████╗██╗  ██╗██╗    ██╗ █████╗ ████████╗███████╗██████╗ 
+    ██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██║    ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗
+    ██████╔╝███████║██║     █████╔╝ ██║ █╗ ██║███████║   ██║   █████╗  ██████╔╝
+    ██╔══██╗██╔══██║██║     ██╔═██╗ ██║███╗██║██╔══██║   ██║   ██╔══╝  ██╔══██╗
+    ██████╔╝██║  ██║╚██████╗██║  ██╗╚███╔███╔╝██║  ██║   ██║   ███████╗██║  ██║
+    ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
+    """)
+    print("\033[0m")  # Reset
+
+
+def print_logo(mode: Literal["headwater", "bywater", "backwater"] = "headwater"):
+    if mode == "headwater":
+        print_headwater_logo()
+    elif mode == "bywater":
+        print_bywater_logo()
+    elif mode == "backwater":
+        print_backwater_logo()
+    else:
+        raise ValueError(f"Invalid mode: {mode}")
+
+
 if __name__ == "__main__":
     print_logo()
+    print_bywater_logo()
+    print_backwater_logo()
