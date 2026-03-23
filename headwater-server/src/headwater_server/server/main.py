@@ -33,7 +33,7 @@ def run_server(mode: str = "headwater"):
 
     # 3. Determine how many lines the logo takes (e.g., 10 lines)
     # You may need to adjust this number based on your actual FIGlet height
-    header_height = 8
+    header_height = 10
 
     # 4. Set scrolling region: Top margin is header_height + 1, bottom is end of screen
     # Syntax: \033[<top>;<bottom>r
