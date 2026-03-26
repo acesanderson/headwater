@@ -1,4 +1,4 @@
-from typing import Literal
+from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import Any
 
@@ -37,25 +37,6 @@ class ListCollectionsResponse(BaseModel):
     )
 
 
-class CreateCollectionResponse(BaseModel):
-    collection_name: str = Field(..., description="The name of the created collection.")
-    embedding_model: str = Field(
-        ..., description="The embedding model used for the collection."
-    )
-    result: Literal["already_exists", "created"] = Field(
-        ..., description="Result of the create operation"
-    )
-
-
-class DeleteCollectionResponse(BaseModel):
-    collection_name: str = Field(
-        ..., description="The name of the collection to delete."
-    )
-    result: Literal["not_found", "deleted"] = Field(
-        ..., description="Result of the delete operation"
-    )
-
-
 class QueryCollectionResult(BaseModel):
     id: str = Field(..., description="The ID of the document.")
     document: str = Field(..., description="The content of the document.")
@@ -76,8 +57,6 @@ __all__ = [
     "EmbeddingsResponse",
     "QuickEmbeddingResponse",
     "CollectionRecord",
-    "CreateCollectionResponse",
-    "DeleteCollectionResponse",
     "QueryCollectionResult",
     "QueryCollectionResponse",
 ]

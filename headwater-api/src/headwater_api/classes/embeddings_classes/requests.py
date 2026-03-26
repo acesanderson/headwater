@@ -90,25 +90,6 @@ class GetCollectionRequest(BaseModel):
     )
 
 
-class CreateCollectionRequest(BaseModel):
-    collection_name: str = Field(
-        ..., description="The name of the collection to create."
-    )
-    embedding_model: str = Field(
-        ..., description="The embedding model to use for the collection."
-    )
-    metadata: dict[str, Any] | None = Field(
-        default=None,
-        description="Optional metadata for the collection.",
-    )
-
-
-class DeleteCollectionRequest(BaseModel):
-    collection_name: str = Field(
-        ..., description="The name of the collection to delete."
-    )
-
-
 class QueryCollectionRequest(BaseModel):
     name: str = Field(
         ...,
@@ -144,7 +125,5 @@ __all__ = [
     "ChromaBatch",
     "EmbeddingsRequest",
     "QuickEmbeddingRequest",
-    "CreateCollectionRequest",
-    "DeleteCollectionRequest",
     "QueryCollectionRequest",
 ]

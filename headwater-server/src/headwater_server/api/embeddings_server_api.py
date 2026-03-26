@@ -86,27 +86,3 @@ class EmbeddingsServerAPI:
 
             return await query_collection_service(request)
 
-        # # Collections
-        # @self.app.post(
-        #     "/conduit/embeddings/collections", response_model=CreateCollectionResponse
-        # )
-        # def create_collection(
-        #     request: CreateCollectionRequest,
-        # ) -> CreateCollectionResponse:
-        #     from headwater_server.services.embeddings_service.create_collection_service import (
-        #         create_collection_service,
-        #     )
-        #
-        #     return create_collection_service(request)
-        # @self.app.delete(
-        #     "/conduit/embeddings/collections", response_model=DeleteCollectionResponse
-        # )
-        # def delete_collection(
-        #     request: DeleteCollectionRequest,
-        # ) -> DeleteCollectionResponse:
-        #     from headwater_server.services.embeddings_service.delete_collection_service import (
-        #         delete_collection_service,
-        #     )
-        #
-        #     return delete_collection_service(request)
-        #

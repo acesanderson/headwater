@@ -11,13 +11,9 @@ from headwater_api.classes import (
     EmbeddingModelSpec,
     QuickEmbeddingRequest,
     QuickEmbeddingResponse,
-    CreateCollectionRequest,
-    CreateCollectionResponse,
     GetCollectionRequest,
     CollectionRecord,
     ListCollectionsResponse,
-    DeleteCollectionRequest,
-    DeleteCollectionResponse,
     QueryCollectionRequest,
     QueryCollectionResponse,
 )
