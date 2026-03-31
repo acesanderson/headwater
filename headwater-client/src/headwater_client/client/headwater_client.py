@@ -25,7 +25,7 @@ from headwater_client.transport.headwater_transport import HeadwaterTransport
 
 class HeadwaterClient:
     def __init__(
-        self, host_alias: Literal["headwater", "bywater", "backwater"] = "headwater"
+        self, host_alias: Literal["headwater", "bywater", "backwater", "deepwater", "stillwater"] = "headwater"
     ):
         self._transport = HeadwaterTransport(host_alias=host_alias)
         self.conduit = ConduitAPI(self._transport)

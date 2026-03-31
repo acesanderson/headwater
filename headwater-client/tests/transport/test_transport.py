@@ -4,8 +4,13 @@ from headwater_client.transport.headwater_transport import HeadwaterTransport
 from dbclients.discovery.host import NetworkContext
 
 
-def _fake_ctx(siphon="1.1.1.1", bywater="2.2.2.2") -> NetworkContext:
-    # Inline helper — no conftest.py. Each test file is self-contained.
+def _fake_ctx(
+    headwater="1.1.1.1",
+    deepwater="9.9.9.9",
+    bywater="2.2.2.2",
+    backwater="3.3.3.3",
+    stillwater="4.4.4.4",
+) -> NetworkContext:
     return NetworkContext(
         local_hostname="test",
         is_on_vpn=False,
@@ -13,16 +18,18 @@ def _fake_ctx(siphon="1.1.1.1", bywater="2.2.2.2") -> NetworkContext:
         is_database_server=False,
         is_siphon_server=False,
         preferred_host="",
-        siphon_server=siphon,
+        headwater_server=headwater,
+        deepwater_server=deepwater,
         bywater_server=bywater,
+        backwater_server=backwater,
+        stillwater_server=stillwater,
     )
 
 
-def test_sync_transport_headwater_alias_uses_siphon_server(monkeypatch):
-    """AC-4: host_alias='headwater' routes to siphon_server IP."""
+def test_sync_transport_headwater_alias_uses_headwater_server(monkeypatch):
     monkeypatch.setattr(
         "headwater_client.transport.headwater_transport.get_network_context",
-        lambda: _fake_ctx(siphon="1.1.1.1", bywater="2.2.2.2"),
+        lambda: _fake_ctx(headwater="1.1.1.1", bywater="2.2.2.2"),
     )
     t = HeadwaterTransport(host_alias="headwater")
     assert "1.1.1.1" in t.base_url
@@ -30,10 +37,9 @@ def test_sync_transport_headwater_alias_uses_siphon_server(monkeypatch):
 
 
 def test_sync_transport_bywater_alias_uses_bywater_server(monkeypatch):
-    """AC-4: host_alias='bywater' routes to bywater_server IP."""
     monkeypatch.setattr(
         "headwater_client.transport.headwater_transport.get_network_context",
-        lambda: _fake_ctx(siphon="1.1.1.1", bywater="2.2.2.2"),
+        lambda: _fake_ctx(headwater="1.1.1.1", bywater="2.2.2.2"),
     )
     t = HeadwaterTransport(host_alias="bywater")
     assert "2.2.2.2" in t.base_url
@@ -41,20 +47,18 @@ def test_sync_transport_bywater_alias_uses_bywater_server(monkeypatch):
 
 
 def test_sync_transport_default_alias_is_headwater(monkeypatch):
-    """AC-4: Default host_alias is 'headwater'."""
     monkeypatch.setattr(
         "headwater_client.transport.headwater_transport.get_network_context",
-        lambda: _fake_ctx(siphon="1.1.1.1", bywater="2.2.2.2"),
+        lambda: _fake_ctx(headwater="1.1.1.1"),
     )
     t = HeadwaterTransport()
     assert "1.1.1.1" in t.base_url
 
 
 def test_sync_transport_explicit_base_url_ignores_alias(monkeypatch):
-    """AC-4: Explicit base_url overrides host_alias entirely."""
     monkeypatch.setattr(
         "headwater_client.transport.headwater_transport.get_network_context",
-        lambda: _fake_ctx(siphon="1.1.1.1", bywater="2.2.2.2"),
+        lambda: _fake_ctx(headwater="1.1.1.1", bywater="2.2.2.2"),
     )
     t = HeadwaterTransport(base_url="http://192.168.99.99:8080", host_alias="bywater")
     assert "192.168.99.99" in t.base_url
@@ -62,11 +66,10 @@ def test_sync_transport_explicit_base_url_ignores_alias(monkeypatch):
 
 
 def test_sync_transport_get_url_emits_debug_log(monkeypatch, caplog):
-    """AC-4: _get_url() logs the resolved alias and IP at DEBUG level."""
     import logging
     monkeypatch.setattr(
         "headwater_client.transport.headwater_transport.get_network_context",
-        lambda: _fake_ctx(siphon="1.1.1.1", bywater="2.2.2.2"),
+        lambda: _fake_ctx(headwater="1.1.1.1", bywater="2.2.2.2"),
     )
     with caplog.at_level(logging.DEBUG, logger="headwater_client.transport.headwater_transport"):
         HeadwaterTransport(host_alias="bywater")
@@ -74,17 +77,42 @@ def test_sync_transport_get_url_emits_debug_log(monkeypatch, caplog):
 
 
 def test_sync_transport_defers_resolution(monkeypatch):
-    """AC-3: get_network_context() is called at instantiation, not at import.
-    Proof: a monkeypatch applied after import still takes effect for new instances.
-    If get_network_context() were evaluated at module import, the patch would
-    arrive too late and base_url would contain the real IP, not '9.8.7.6'.
-    """
     monkeypatch.setattr(
         "headwater_client.transport.headwater_transport.get_network_context",
-        lambda: _fake_ctx(siphon="9.8.7.6"),
+        lambda: _fake_ctx(headwater="9.8.7.6"),
     )
     t = HeadwaterTransport()
     assert "9.8.7.6" in t.base_url, (
         "base_url did not use the patched context — "
         "get_network_context() is likely still evaluated at module import"
     )
+
+
+def test_headwater_alias_resolves_to_router_port_8081(monkeypatch):
+    """AC-1: host_alias='headwater' resolves to base_url with port 8081."""
+    monkeypatch.setattr(
+        "headwater_client.transport.headwater_transport.get_network_context",
+        lambda: _fake_ctx(headwater="172.16.0.4"),
+    )
+    t = HeadwaterTransport(host_alias="headwater")
+    assert t.base_url == "http://172.16.0.4:8081"
+
+
+def test_deepwater_alias_resolves_to_alphablue(monkeypatch):
+    """AC-2: host_alias='deepwater' resolves to AlphaBlue IP on port 8080."""
+    monkeypatch.setattr(
+        "headwater_client.transport.headwater_transport.get_network_context",
+        lambda: _fake_ctx(deepwater="172.16.0.2"),
+    )
+    t = HeadwaterTransport(host_alias="deepwater")
+    assert t.base_url == "http://172.16.0.2:8080"
+
+
+def test_stillwater_alias_resolves_to_botvinnik(monkeypatch):
+    """AC-12: host_alias='stillwater' resolves to Botvinnik IP on port 8080."""
+    monkeypatch.setattr(
+        "headwater_client.transport.headwater_transport.get_network_context",
+        lambda: _fake_ctx(stillwater="172.16.0.3"),
+    )
+    t = HeadwaterTransport(host_alias="stillwater")
+    assert t.base_url == "http://172.16.0.3:8080"
