@@ -94,3 +94,10 @@ def test_reranker_none_model_routes_to_backwater(config: RouterConfig):
     """AC-5: reranker request with no model name routes to Backwater (treated as light)."""
     result = resolve_backend("reranker", None, config)
     assert result == "http://172.16.0.9:8080"  # backwater — reranker_light
+
+
+def test_unknown_service_raises_routing_error(config: RouterConfig):
+    """AC-6: resolve_backend raises RoutingError for unknown services."""
+    with pytest.raises(RoutingError) as exc_info:
+        resolve_backend("unknown_service", None, config)
+    assert "unknown_service" in str(exc_info.value)
