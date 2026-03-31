@@ -7,6 +7,28 @@ import traceback
 import time
 
 
+def _sanitize_errors(errors: list[dict]) -> list[dict]:
+    """
+    Pydantic v2 ValidationError.errors() may include raw exception objects
+    in `ctx['error']`. These are not JSON-serializable. Convert them to strings.
+    """
+    result = []
+    for err in errors:
+        sanitized: dict[str, Any] = {}
+        for k, v in err.items():
+            if k == "ctx" and isinstance(v, dict):
+                sanitized[k] = {
+                    ck: str(cv) if isinstance(cv, Exception) else cv
+                    for ck, cv in v.items()
+                }
+            elif isinstance(v, Exception):
+                sanitized[k] = str(v)
+            else:
+                sanitized[k] = v
+        result.append(sanitized)
+    return result
+
+
 class ErrorType(str, Enum):
     VALIDATION_ERROR = "validation_error"
     PYDANTIC_VALIDATION = "pydantic_validation"
@@ -57,7 +79,7 @@ class HeadwaterServerError(BaseModel):
             path=str(request.url.path) if request else None,
             method=request.method if request else None,
             request_id=getattr(request.state, "request_id", None) if request else None,
-            validation_errors=exc.errors() if hasattr(exc, "errors") else None,
+            validation_errors=_sanitize_errors(exc.errors()) if hasattr(exc, "errors") else None,
             original_exception=str(exc),
             traceback=traceback.format_exc() if include_traceback else None,
         )

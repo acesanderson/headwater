@@ -44,7 +44,23 @@
       "Bash(source /Users/bianders/Brian_Code/headwater/headwater-api/.venv/bin/activate)",
       "Bash(pytest /Users/bianders/Brian_Code/headwater/headwater-api/tests/test_error_type_variants.py -v)",
       "Bash(/usr/local/bin/uv sync:*)",
-      "Bash(/opt/homebrew/bin/uv sync:*)"
+      "Bash(/opt/homebrew/bin/uv sync:*)",
+      "Bash(python -m pytest -v)",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/dbclients-project && /opt/homebrew/bin/uv run pytest tests/ -v\")",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/dbclients-project && /opt/homebrew/bin/uv run python -c 'from src.dbclients.discovery.host import NetworkContext, get_network_context; ctx = get_network_context\\(\\); print\\(\\\\\"✓ Module imports successfully\\\\\"\\); print\\(f\\\\\"backwater_server: {ctx.backwater_server}\\\\\"\\)'\")",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/dbclients-project && git add src/dbclients/discovery/host.py && git commit -m 'fix\\(dbclients\\): restore backwater_server field dropped in previous commit'\")",
+      "Bash(bash -c \"cd /Users/bianders/Brian_Code/dbclients-project && git log -1 --oneline && git show --stat\")",
+      "Bash(/opt/homebrew/bin/python3 -m pytest tests/server/test_routing_config.py -v)",
+      "Bash(PYTHONPATH=/Users/bianders/Brian_Code/headwater/headwater-server/src python3 -m pytest /Users/bianders/Brian_Code/headwater/headwater-server/tests/server/test_routing_config.py -v 2>&1)",
+      "Bash(PYTEST_ADDOPTS=\"-v --tb=short\" uv run --directory /Users/bianders/Brian_Code/headwater/headwater-server pytest tests/server/test_routing_config.py::test_conduit_light_model_routes_to_bywater)",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
+      "Bash(/bin/zsh -c 'cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_routing_config.py -v --override-ini=\"addopts=-v --tb=short\" 2>&1')",
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py::test_ping_returns_pong_without_proxying -v --override-ini='addopts=-v --tb=short' 2>&1 | tail -20\")",
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py -v --override-ini='addopts=-v --tb=short' 2>&1\")",
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py::test_proxy_returns_503_with_backend_unavailable_when_unreachable -v --override-ini='addopts=-v --tb=long' 2>&1\")",
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py::test_proxy_returns_503_with_backend_unavailable_when_unreachable -v --override-ini='addopts=-v --tb=short' 2>&1\")",
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv sync 2>&1 | tail -5\")",
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py tests/server/test_routing_config.py -v --override-ini='addopts=-v --tb=short' 2>&1\")"
     ]
   }
 }
