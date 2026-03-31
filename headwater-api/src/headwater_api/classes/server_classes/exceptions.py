@@ -18,6 +18,9 @@ class ErrorType(str, Enum):
     TIMEOUT_ERROR = "timeout_error"
     DEPENDENCY_ERROR = "dependency_error"
     NETWORK_ERROR = "network_error"
+    ROUTING_ERROR = "routing_error"
+    BACKEND_UNAVAILABLE = "backend_unavailable"
+    BACKEND_TIMEOUT = "backend_timeout"
 
 
 class HeadwaterServerError(BaseModel):
