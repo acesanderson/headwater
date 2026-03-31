@@ -233,6 +233,12 @@ class HeadwaterAsyncTransport:
         status_response = StatusResponse(**response.json())
         return status_response
 
+    async def get_logs_last(self, n: int = 50):
+        """Fetch the last n log entries from the server."""
+        from headwater_api.classes import LogsLastResponse
+        response = await self._request("GET", f"/logs/last?n={n}")
+        return LogsLastResponse.model_validate_json(response)
+
     async def list_routes(self) -> dict:
         """
         List all available routes on the server. (GET /routes)

@@ -30,7 +30,7 @@ from headwater_client.api.openai_async_api import OpenAICompatAsyncAPI
 from headwater_client.api.reranker_async_api import RerankerAsyncAPI
 from headwater_client.api.siphon_async_api import SiphonAsyncAPI
 from headwater_client.transport.headwater_async_transport import HeadwaterAsyncTransport
-from headwater_api.classes import StatusResponse
+from headwater_api.classes import LogsLastResponse, StatusResponse
 
 
 class HeadwaterAsyncClient:
@@ -69,6 +69,10 @@ class HeadwaterAsyncClient:
     async def get_status(self) -> StatusResponse:
         """Get the status of the Headwater service."""
         return await self._transport.get_status()
+
+    async def get_logs_last(self, n: int = 50) -> LogsLastResponse:
+        """Fetch the last n log entries from the Headwater service."""
+        return await self._transport.get_logs_last(n)
 
     async def list_routes(self) -> dict:
         """List available API routes."""
