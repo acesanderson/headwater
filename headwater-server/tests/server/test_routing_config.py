@@ -76,3 +76,21 @@ def test_conduit_heavy_model_routes_to_deepwater(config: RouterConfig):
     """AC-4: conduit request with a heavy model routes to Deepwater."""
     result = resolve_backend("conduit", "qwq:latest", config)
     assert result == "http://172.16.0.2:8080"  # deepwater
+
+
+def test_reranker_heavy_model_routes_to_bywater(config: RouterConfig):
+    """AC-5: reranker request with a heavy model routes to Bywater (reranker_heavy)."""
+    result = resolve_backend("reranker", "qwq:latest", config)
+    assert result == "http://172.16.0.4:8080"  # bywater — reranker_heavy
+
+
+def test_reranker_light_model_routes_to_backwater(config: RouterConfig):
+    """AC-5: reranker request with a non-heavy model routes to Backwater (reranker_light)."""
+    result = resolve_backend("reranker", "some-light-reranker", config)
+    assert result == "http://172.16.0.9:8080"  # backwater — reranker_light
+
+
+def test_reranker_none_model_routes_to_backwater(config: RouterConfig):
+    """AC-5: reranker request with no model name routes to Backwater (treated as light)."""
+    result = resolve_backend("reranker", None, config)
+    assert result == "http://172.16.0.9:8080"  # backwater — reranker_light
