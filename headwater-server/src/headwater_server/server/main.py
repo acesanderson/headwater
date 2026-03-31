@@ -70,5 +70,32 @@ def main():
     run_server(mode)
 
 
+def run_router():
+    from pathlib import Path
+    import uvicorn
+    import sys
+
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.flush()
+
+    try:
+        uvicorn.run(
+            "headwater_server.server.router:app",
+            host="0.0.0.0",
+            port=8081,
+            reload=True,
+            reload_dirs=[str(Path(__file__).parent.parent.parent)],
+            log_config=None,
+            log_level="info",
+        )
+    finally:
+        sys.stdout.write("\033[r")
+        sys.stdout.flush()
+
+
+def router_main():
+    run_router()
+
+
 if __name__ == "__main__":
     main()
