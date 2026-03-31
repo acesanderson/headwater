@@ -108,15 +108,15 @@ def test_proxy_propagates_422_status_and_body_verbatim(router_client: TestClient
 def test_proxy_returns_503_with_backend_unavailable_when_unreachable(router_client: TestClient):
     """AC-8: Backend ConnectError → HTTP 503 with error_type='backend_unavailable'."""
     with patch("headwater_server.server.router.httpx") as mock_httpx:
+        mock_httpx.ConnectError = httpx.ConnectError
+        mock_httpx.TimeoutException = httpx.TimeoutException
         mock_async_client = AsyncMock()
         mock_async_client.__aenter__ = AsyncMock(return_value=mock_async_client)
         mock_async_client.__aexit__ = AsyncMock(return_value=None)
         mock_async_client.request = AsyncMock(
-            side_effect=mock_httpx.ConnectError("Connection refused")
+            side_effect=httpx.ConnectError("Connection refused")
         )
         mock_httpx.AsyncClient.return_value = mock_async_client
-        mock_httpx.ConnectError = httpx.ConnectError
-        mock_httpx.TimeoutException = httpx.TimeoutException
 
         response = router_client.post(
             "/conduit/generate",

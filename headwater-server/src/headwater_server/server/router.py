@@ -9,9 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import httpx
-from httpx import ConnectError as _HttpxConnectError
-from httpx import Response as _HttpxResponse
-from httpx import TimeoutException as _HttpxTimeoutException
 
 import headwater_server.server.logging_config  # noqa: F401
 
@@ -107,34 +104,22 @@ class HeadwaterRouter:
                 },
             )
 
-            upstream: _HttpxResponse | None = None
-            connect_exc: Exception | None = None
-            timeout_exc: Exception | None = None
             try:
                 async with httpx.AsyncClient() as client:
-                    result = await client.request(
+                    upstream = await client.request(
                         method=request.method,
                         url=target,
                         headers=forward_headers,
                         content=body,
                         timeout=300.0,
                     )
-                    if isinstance(result, _HttpxResponse):
-                        upstream = result
-                    else:
-                        connect_exc = Exception(f"Backend returned unexpected object: {type(result)}")
-            except _HttpxConnectError as exc:
-                connect_exc = exc
-            except _HttpxTimeoutException as exc:
-                timeout_exc = exc
-
-            if connect_exc is not None:
+            except httpx.ConnectError as exc:
                 logger.error(
                     "backend_unavailable",
                     extra={
                         "backend": backend_url,
                         "path": path,
-                        "error": str(connect_exc),
+                        "error": str(exc),
                         "req_id": request.state.request_id,
                     },
                 )
@@ -148,14 +133,13 @@ class HeadwaterRouter:
                     context={"backend": backend_url},
                 )
                 return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
-
-            if timeout_exc is not None:
+            except httpx.TimeoutException as exc:
                 logger.error(
                     "backend_timeout",
                     extra={
                         "backend": backend_url,
                         "path": path,
-                        "error": str(timeout_exc),
+                        "error": str(exc),
                         "req_id": request.state.request_id,
                     },
                 )
@@ -170,7 +154,6 @@ class HeadwaterRouter:
                 )
                 return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
 
-            assert upstream is not None
             response_headers = {
                 k: v for k, v in upstream.headers.items()
                 if k.lower() not in HOP_BY_HOP
