@@ -39,7 +39,12 @@
       "Bash(cd /Users/bianders/Brian_Code/dbclients-project && /Users/bianders/.local/bin/uv run pytest tests/ -v 2>&1 | tail -40)",
       "Bash(/Users/bianders/.local/bin/uv run:*)",
       "Bash(cd /Users/bianders/Brian_Code/dbclients-project && python -m pytest tests/ -v --tb=short 2>&1 | tail -15)",
-      "Bash(conduit --help 2>&1 | head -30)"
+      "Bash(conduit --help 2>&1 | head -30)",
+      "Bash(/opt/homebrew/bin/uv run:*)",
+      "Bash(source /Users/bianders/Brian_Code/headwater/headwater-api/.venv/bin/activate)",
+      "Bash(pytest /Users/bianders/Brian_Code/headwater/headwater-api/tests/test_error_type_variants.py -v)",
+      "Bash(/usr/local/bin/uv sync:*)",
+      "Bash(/opt/homebrew/bin/uv sync:*)"
     ]
   }
 }
