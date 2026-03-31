@@ -70,3 +70,9 @@ def test_conduit_light_model_routes_to_bywater(config: RouterConfig):
     """AC-3: conduit request with a non-heavy model routes to Bywater."""
     result = resolve_backend("conduit", "llama3.2:3b", config)
     assert result == "http://172.16.0.4:8080"  # bywater
+
+
+def test_conduit_heavy_model_routes_to_deepwater(config: RouterConfig):
+    """AC-4: conduit request with a heavy model routes to Deepwater."""
+    result = resolve_backend("conduit", "qwq:latest", config)
+    assert result == "http://172.16.0.2:8080"  # deepwater

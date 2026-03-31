@@ -72,9 +72,26 @@ def resolve_backend(service: str, model: str | None, config: RouterConfig) -> st
     """
     Return backend base_url for the given service and model.
 
+    Resolution order:
+    1. conduit + heavy model → heavy_inference backend
+    2. reranker + heavy model → reranker_heavy backend
+    3. reranker + light/unknown model → reranker_light backend
+    4. all other services → config.routes[service]
+
     Raises:
         RoutingError: if service has no entry in config.routes.
     """
+    is_heavy = model is not None and model in config.heavy_models
+
+    if service == "conduit" and is_heavy:
+        backend_name = config.routes["heavy_inference"]
+        return config.backends[backend_name]
+
+    if service == "reranker":
+        key = "reranker_heavy" if is_heavy else "reranker_light"
+        backend_name = config.routes[key]
+        return config.backends[backend_name]
+
     if service not in config.routes:
         raise RoutingError(
             f"Unknown service '{service}'. Known services: {sorted(config.routes.keys())}"
