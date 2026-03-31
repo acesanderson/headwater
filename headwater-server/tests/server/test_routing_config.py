@@ -7,7 +7,9 @@ from pathlib import Path
 from headwater_server.server.routing_config import (
     RouterConfig,
     RoutingConfigError,
+    RoutingError,
     load_router_config,
+    resolve_backend,
 )
 
 VALID_CONFIG = {
@@ -62,3 +64,9 @@ def test_route_referencing_undefined_backend_raises_routing_config_error(tmp_pat
     with pytest.raises(RoutingConfigError) as exc_info:
         load_router_config(path)
     assert "conduit" in str(exc_info.value) or "nonexistent_backend" in str(exc_info.value)
+
+
+def test_conduit_light_model_routes_to_bywater(config: RouterConfig):
+    """AC-3: conduit request with a non-heavy model routes to Bywater."""
+    result = resolve_backend("conduit", "llama3.2:3b", config)
+    assert result == "http://172.16.0.4:8080"  # bywater

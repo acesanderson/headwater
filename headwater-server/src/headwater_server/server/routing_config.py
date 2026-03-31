@@ -66,3 +66,19 @@ def load_router_config(path: Path = ROUTES_YAML_PATH) -> RouterConfig:
         routes=routes,
         heavy_models=heavy_models,
     )
+
+
+def resolve_backend(service: str, model: str | None, config: RouterConfig) -> str:
+    """
+    Return backend base_url for the given service and model.
+
+    Raises:
+        RoutingError: if service has no entry in config.routes.
+    """
+    if service not in config.routes:
+        raise RoutingError(
+            f"Unknown service '{service}'. Known services: {sorted(config.routes.keys())}"
+        )
+
+    backend_name = config.routes[service]
+    return config.backends[backend_name]
