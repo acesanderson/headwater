@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 HEADWATER_SERVER_DEFAULT_PORT = 8080
+HEADWATER_ROUTER_PORT = 8081
 
 
 class HeadwaterAsyncTransport:
@@ -26,7 +27,7 @@ class HeadwaterAsyncTransport:
     def __init__(
         self,
         base_url: str = "",
-        host_alias: Literal["headwater", "bywater", "backwater"] = "headwater",
+        host_alias: Literal["headwater", "bywater", "backwater", "deepwater", "stillwater"] = "headwater",
     ):
         self._host_alias = host_alias
         if base_url == "":
@@ -41,18 +42,26 @@ class HeadwaterAsyncTransport:
         match self._host_alias:
             case "headwater":
                 ip = ctx.headwater_server
+                port = HEADWATER_ROUTER_PORT
             case "bywater":
                 ip = ctx.bywater_server
+                port = HEADWATER_SERVER_DEFAULT_PORT
             case "backwater":
                 ip = ctx.backwater_server
+                port = HEADWATER_SERVER_DEFAULT_PORT
+            case "deepwater":
+                ip = ctx.deepwater_server
+                port = HEADWATER_SERVER_DEFAULT_PORT
+            case "stillwater":
+                ip = ctx.stillwater_server
+                port = HEADWATER_SERVER_DEFAULT_PORT
             case _:
                 raise ValueError(
-                    f"Invalid host_alias '{self._host_alias}'. Must be 'headwater', 'bywater', or 'backwater'."
+                    f"Invalid host_alias '{self._host_alias}'. Must be one of: "
+                    "'headwater', 'bywater', 'backwater', 'deepwater', 'stillwater'."
                 )
-        url = f"http://{ip}:{HEADWATER_SERVER_DEFAULT_PORT}"
-        logger.debug(
-            f"[{self._host_alias}] resolved to {ip}:{HEADWATER_SERVER_DEFAULT_PORT}"
-        )
+        url = f"http://{ip}:{port}"
+        logger.debug(f"[{self._host_alias}] resolved to {ip}:{port}")
         return url
 
     async def __aenter__(self):

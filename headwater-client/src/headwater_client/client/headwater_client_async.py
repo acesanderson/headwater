@@ -37,7 +37,7 @@ class HeadwaterAsyncClient:
     def __init__(
         self,
         base_url: str = "",
-        host_alias: Literal["headwater", "bywater", "backwater"] = "headwater",
+        host_alias: Literal["headwater", "bywater", "backwater", "deepwater", "stillwater"] = "headwater",
     ):
         self._transport = HeadwaterAsyncTransport(
             base_url=base_url, host_alias=host_alias
