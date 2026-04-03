@@ -15,6 +15,20 @@ def print_headwater_logo():
     print("\033[0m")  # Reset color
 
 
+def print_deepwater_logo():
+    # deep blue
+    print("\033[34m")
+    print("""
+    ██████╗ ███████╗███████╗██████╗ ██╗    ██╗ █████╗ ████████╗███████╗██████╗ 
+    ██╔══██╗██╔════╝██╔════╝██╔══██╗██║    ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗
+    ██║  ██║█████╗  █████╗  ██████╔╝██║ █╗ ██║███████║   ██║   █████╗  ██████╔╝
+    ██║  ██║██╔══╝  ██╔═╝   ██╔═══╝ ██║███╗██║██╔══██║   ██║   ██╔══╝  ██╔══██╗
+    ██████╔╝███████╗███████╗██║     ╚███╔███╔╝██║  ██║   ██║   ███████╗██║  ██║
+    ╚═════╝ ╚══════╝╚══════╝╚═╝      ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚═════╝╚═╝  ╚═╝
+    """)
+    print("\033[0m")  # Reset
+
+
 def print_bywater_logo():
     print("\033[33m")  # Yellow
     print("""
@@ -41,18 +55,19 @@ def print_backwater_logo():
     print("\033[0m")  # Reset
 
 
-def print_logo(mode: Literal["headwater", "bywater", "backwater"] = "headwater"):
-    if mode == "headwater":
-        print_headwater_logo()
+def print_logo(mode: Literal["deepwater", "bywater", "backwater", "headwater"]):
+    if mode == "deepwater":
+        print_deepwater_logo()
     elif mode == "bywater":
         print_bywater_logo()
     elif mode == "backwater":
         print_backwater_logo()
-    else:
-        raise ValueError(f"Invalid mode: {mode}")
+    elif mode == "headwater":
+        print_headwater_logo()
 
 
 if __name__ == "__main__":
-    print_logo()
     print_bywater_logo()
     print_backwater_logo()
+    print_deepwater_logo()
+    print_headwater_logo()

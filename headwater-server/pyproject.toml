@@ -50,6 +50,6 @@ kramer = { path = "../../kramer-project", editable = true }
 
 # ─ entry points ────────────────────────────────────────────────────────────────
 [project.scripts]
-headwater = "headwater_server.server.main:main"
-headwater-router = "headwater_server.server.main:router_main"
+hw-up = "headwater_server.server.main:main"
+hw-route = "headwater_server.server.main:router_main"
 update-embedding-modelstore = "headwater_server.scripts.update_embedding_modelstore:main"
