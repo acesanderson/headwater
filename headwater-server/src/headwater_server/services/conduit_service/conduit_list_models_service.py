@@ -4,9 +4,14 @@ import time
 
 
 async def conduit_list_models_service() -> dict:
-    from conduit.core.model.models.modelstore import ModelStore
+    import httpx
 
-    model_ids = ModelStore.local_models()
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        response = await client.get("http://localhost:11434/api/tags")
+        response.raise_for_status()
+        data = response.json()
+
+    model_ids = [m["name"] for m in data.get("models", [])]
     created = int(time.time())
 
     return {
