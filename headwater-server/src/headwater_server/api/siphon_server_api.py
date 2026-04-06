@@ -1,5 +1,11 @@
+from __future__ import annotations
+
 from fastapi import FastAPI
-from headwater_api.classes import EmbedBatchRequest, EmbedBatchResponse
+from headwater_api.classes import BatchExtractRequest
+from headwater_api.classes import BatchExtractResponse
+from headwater_api.classes import EmbedBatchRequest
+from headwater_api.classes import EmbedBatchResponse
+from headwater_server.services.siphon_service.batch_extract_siphon_service import batch_extract_siphon_service
 from siphon_api.api.siphon_request import SiphonRequest
 from siphon_api.api.siphon_response import SiphonResponse
 
@@ -37,3 +43,7 @@ class SiphonServerAPI:
             )
 
             return await embed_batch_siphon_service(request)
+
+        @self.app.post("/siphon/extract/batch", response_model=BatchExtractResponse)
+        async def siphon_extract_batch(request: BatchExtractRequest) -> BatchExtractResponse:
+            return await batch_extract_siphon_service(request)
