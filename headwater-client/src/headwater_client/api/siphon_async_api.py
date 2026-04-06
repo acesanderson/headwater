@@ -2,6 +2,8 @@
 Async client for interacting with the Siphon service.
 """
 
+from headwater_api.classes import BatchExtractRequest
+from headwater_api.classes import BatchExtractResponse
 from headwater_api.classes import EmbedBatchRequest, EmbedBatchResponse, SIPHON_EMBED_MODEL
 from headwater_client.api.base_async_api import BaseAsyncAPI
 from siphon_api.api.siphon_request import SiphonRequest
@@ -22,6 +24,17 @@ class SiphonAsyncAPI(BaseAsyncAPI):
         except Exception as e:
             raise ValueError(
                 "Response could not be validated as SiphonResponse."
+            ) from e
+
+    async def extract_batch(self, request: BatchExtractRequest) -> BatchExtractResponse:
+        """Batch-extract raw text from multiple sources via /siphon/extract/batch."""
+        json_payload = request.model_dump_json()
+        response = await self._request("POST", "/siphon/extract/batch", json_payload=json_payload)
+        try:
+            return BatchExtractResponse.model_validate_json(response)
+        except Exception as e:
+            raise ValueError(
+                "Response could not be validated as BatchExtractResponse."
             ) from e
 
     async def embed_batch(
