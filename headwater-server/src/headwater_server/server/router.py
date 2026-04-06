@@ -66,7 +66,9 @@ class HeadwaterRouter:
             model: str | None = None
             if body:
                 try:
-                    model = json.loads(body).get("model")
+                    parsed = json.loads(body)
+                    # Top-level "model" (OpenAI-style) or nested under "params" (GenerationRequest/BatchRequest)
+                    model = parsed.get("model") or (parsed.get("params") or {}).get("model")
                 except Exception:
                     pass
 
