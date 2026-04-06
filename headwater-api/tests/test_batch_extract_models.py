@@ -30,6 +30,24 @@ def test_extract_result_failure_state():
     assert r.error == "docling timeout"
 
 
+def test_extract_result_rejects_both_none():
+    from headwater_api.classes import ExtractResult
+    with pytest.raises(ValidationError):
+        ExtractResult(source="a.pdf", text=None, error=None)
+
+
+def test_extract_result_rejects_both_set():
+    from headwater_api.classes import ExtractResult
+    with pytest.raises(ValidationError):
+        ExtractResult(source="a.pdf", text="content", error="also failed")
+
+
+def test_batch_extract_request_rejects_zero_concurrent():
+    from headwater_api.classes import BatchExtractRequest
+    with pytest.raises(ValidationError):
+        BatchExtractRequest(sources=["a.pdf"], max_concurrent=0)
+
+
 def test_batch_extract_response_round_trips_json():
     from headwater_api.classes import BatchExtractResponse, ExtractResult
     resp = BatchExtractResponse(results=[
