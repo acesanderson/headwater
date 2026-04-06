@@ -59,3 +59,10 @@ def test_batch_extract_response_round_trips_json():
     assert len(restored.results) == 2
     assert restored.results[1].error == "failed"
     assert restored.results[0].text == "content"
+
+
+def test_models_importable_from_top_level():
+    from headwater_api.classes import BatchExtractRequest, ExtractResult, BatchExtractResponse
+    assert BatchExtractRequest is not None
+    assert ExtractResult is not None
+    assert BatchExtractResponse is not None
