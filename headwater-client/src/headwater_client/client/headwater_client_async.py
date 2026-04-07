@@ -70,6 +70,10 @@ class HeadwaterAsyncClient:
         """Get the status of the Headwater service."""
         return await self._transport.get_status()
 
+    async def get_routes(self) -> dict | list:
+        """Fetch routing config (router) or FastAPI route list (subserver)."""
+        return await self._transport.get_routes()
+
     async def get_logs_last(self, n: int = 50) -> LogsLastResponse:
         """Fetch the last n log entries from the Headwater service."""
         return await self._transport.get_logs_last(n)

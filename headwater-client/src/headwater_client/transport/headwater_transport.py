@@ -239,6 +239,17 @@ class HeadwaterTransport:
         response.raise_for_status()
         return response.json()
 
+    def get_routes(self) -> dict | list:
+        """Fetch routing config (router) or FastAPI route list (subserver). (GET /routes/)"""
+        response = self._session.request(
+            method="GET",
+            url=urljoin(self.base_url, "routes/"),
+            headers={},
+            data=None,
+        )
+        response.raise_for_status()
+        return response.json()
+
     def get_logs_last(self, n: int = 50) -> LogsLastResponse:
         """Fetch the last n log entries from the server."""
         response = self._request("GET", f"/logs/last?n={n}")

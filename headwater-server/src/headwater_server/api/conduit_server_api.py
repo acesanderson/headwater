@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from headwater_api.classes import (
     GenerationRequest,
     GenerationResponse,
@@ -44,6 +44,13 @@ class ConduitServerAPI:
             )
 
             return await conduit_tokenize_service(request)
+
+        @self.app.get("/conduit/models")
+        async def conduit_models(provider: str | None = Query(default=None)) -> dict:
+            from headwater_server.services.conduit_service.conduit_models_service import (
+                conduit_models_service,
+            )
+            return await conduit_models_service(provider)
 
         @self.app.get("/v1/models")
         async def conduit_list_models() -> dict:

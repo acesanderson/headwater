@@ -248,6 +248,17 @@ class HeadwaterAsyncTransport:
         response = await self._request("GET", f"/logs/last?n={n}")
         return LogsLastResponse.model_validate_json(response)
 
+    async def get_routes(self) -> dict | list:
+        """Fetch routing config (router) or FastAPI route list (subserver). (GET /routes/)"""
+        await self._ensure_client()
+        response = await self._client.request(
+            method="GET",
+            url=urljoin(self.base_url, "routes/"),
+            headers={},
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def list_routes(self) -> dict:
         """
         List all available routes on the server. (GET /routes)

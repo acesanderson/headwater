@@ -4,7 +4,6 @@ import json
 import logging
 import time
 import uuid
-import yaml
 from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
@@ -77,10 +76,14 @@ class HeadwaterRouter:
             from headwater_server.services.status_service.get_status import get_status_service
             return await get_status_service(startup_time, server_name=server_name)
 
-        @self.app.get("/routes")
-        def routes() -> dict:
-            with config_path.open() as f:
-                return yaml.safe_load(f)
+        @self.app.get("/routes/")
+        def routes_config() -> dict:
+            return {
+                "backends": config.backends,
+                "routes": config.routes,
+                "heavy_models": config.heavy_models,
+                "config_path": str(config_path),
+            }
 
         @self.app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
         async def proxy(request: Request, path: str) -> Response:

@@ -64,7 +64,9 @@
       "Bash(conduit batch:*)",
       "Bash(.venv/bin/python:*)",
       "Bash(/Users/bianders/Brian_Code/headwater/.venv/bin/python:*)",
-      "Bash(/Users/bianders/Brian_Code/headwater/.venv/bin/pip show:*)"
+      "Bash(/Users/bianders/Brian_Code/headwater/.venv/bin/pip show:*)",
+      "Bash(chmod +x:*)",
+      "Bash(bash:*)"
     ]
   }
 }
