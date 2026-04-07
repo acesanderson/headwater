@@ -25,6 +25,7 @@ dependencies = [
     "streamlit>=1.54.0",
     "rerankers[flashrank,api]>=0.10.0",
     "einops>=0.8.2",
+    "nvidia-ml-py>=12.0",
 ]
 
 # ── Hatchling (build) ──────────────────────────────────────────────────────────

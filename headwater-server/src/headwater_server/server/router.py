@@ -16,7 +16,7 @@ import headwater_server.server.logging_config  # noqa: F401
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import JSONResponse
 
-from headwater_api.classes import StatusResponse, LogsLastResponse
+from headwater_api.classes import StatusResponse, LogsLastResponse, GpuResponse, RouterGpuResponse
 from headwater_server.server.routing_config import (
     RouterConfig,
     RoutingError,
@@ -84,6 +84,29 @@ class HeadwaterRouter:
                 "heavy_models": config.heavy_models,
                 "config_path": str(config_path),
             }
+
+        @self.app.get("/gpu", response_model=RouterGpuResponse)
+        async def gpu() -> RouterGpuResponse:
+            import asyncio
+
+            async def fetch_backend_gpu(name: str, base_url: str) -> tuple[str, GpuResponse]:
+                try:
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        resp = await client.get(f"{base_url}/gpu")
+                        resp.raise_for_status()
+                        return name, GpuResponse.model_validate(resp.json())
+                except Exception as exc:
+                    return name, GpuResponse(
+                        server_name=name,
+                        gpus=[],
+                        ollama_loaded_models=[],
+                        error=str(exc),
+                    )
+
+            results = await asyncio.gather(
+                *[fetch_backend_gpu(name, url) for name, url in config.backends.items()]
+            )
+            return RouterGpuResponse(backends=dict(results))
 
         @self.app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
         async def proxy(request: Request, path: str) -> Response:

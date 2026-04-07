@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from headwater_api.classes import LogsLastResponse, StatusResponse
+from headwater_api.classes import GpuResponse, LogsLastResponse, RouterGpuResponse, StatusResponse
 from headwater_client.api.conduit_api import ConduitAPI
 from headwater_client.api.curator_api import CuratorAPI
 from headwater_client.api.embeddings_api import EmbeddingsAPI
@@ -53,3 +53,7 @@ class HeadwaterClient:
     def get_logs_last(self, n: int = 50) -> LogsLastResponse:
         """Fetch the last n log entries from the Headwater service."""
         return self._transport.get_logs_last(n)
+
+    def get_gpu(self) -> GpuResponse | RouterGpuResponse:
+        """Fetch GPU stats. Router returns RouterGpuResponse; subservers return GpuResponse."""
+        return self._transport.get_gpu()

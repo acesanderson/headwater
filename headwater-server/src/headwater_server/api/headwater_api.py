@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from headwater_api.classes import StatusResponse, LogsLastResponse
+from headwater_api.classes import StatusResponse, LogsLastResponse, GpuResponse
 from fastapi import FastAPI, Query
 import time
 
@@ -51,3 +51,8 @@ class HeadwaterServerAPI:
         def logs_last(n: int = Query(default=50, ge=1)):
             from headwater_server.server.logging_config import ring_buffer
             return ring_buffer.get_response(n)
+
+        @self.app.get("/gpu", response_model=GpuResponse)
+        async def gpu():
+            from headwater_server.services.gpu_service.get_gpu import get_gpu_service
+            return await get_gpu_service(server_name)

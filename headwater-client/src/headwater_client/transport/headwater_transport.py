@@ -5,7 +5,9 @@ from typing import Literal
 from headwater_api.classes import (
     HeadwaterServerError,
     HeadwaterServerException,
+    GpuResponse,
     LogsLastResponse,
+    RouterGpuResponse,
     StatusResponse,
 )
 from dbclients.discovery.host import get_network_context
@@ -254,3 +256,10 @@ class HeadwaterTransport:
         """Fetch the last n log entries from the server."""
         response = self._request("GET", f"/logs/last?n={n}")
         return LogsLastResponse.model_validate_json(response)
+
+    def get_gpu(self) -> GpuResponse | RouterGpuResponse:
+        """Fetch GPU stats. Returns RouterGpuResponse from the router, GpuResponse from subservers."""
+        response = self._request("GET", "/gpu")
+        if self._host_alias == "headwater":
+            return RouterGpuResponse.model_validate_json(response)
+        return GpuResponse.model_validate_json(response)

@@ -43,6 +43,12 @@ from headwater_api.classes.server_classes.exceptions import (
 )
 from headwater_api.classes.server_classes.status import StatusResponse, PingResponse
 from headwater_api.classes.server_classes.logs import LogEntry, LogsLastResponse
+from headwater_api.classes.server_classes.gpu import (
+    GpuInfo,
+    OllamaLoadedModel,
+    GpuResponse,
+    RouterGpuResponse,
+)
 
 # Configs
 from headwater_api.classes.embeddings_classes.embedding_provider import EmbeddingProvider
@@ -105,6 +111,10 @@ __all__ = [
     "PingResponse",
     "LogEntry",
     "LogsLastResponse",
+    "GpuInfo",
+    "OllamaLoadedModel",
+    "GpuResponse",
+    "RouterGpuResponse",
     # Configs
     "EmbeddingProvider",
     "EmbeddingModelSpec",
