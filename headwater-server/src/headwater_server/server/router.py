@@ -4,7 +4,9 @@ import json
 import logging
 import time
 import uuid
+import yaml
 from collections.abc import Callable
+from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -12,9 +14,10 @@ import httpx
 
 import headwater_server.server.logging_config  # noqa: F401
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import JSONResponse
 
+from headwater_api.classes import StatusResponse, LogsLastResponse
 from headwater_server.server.routing_config import (
     RouterConfig,
     RoutingError,
@@ -41,6 +44,8 @@ class HeadwaterRouter:
     ):
         self._name = name
         self._config: RouterConfig = load_router_config(config_path or ROUTES_YAML_PATH)
+        self._config_path: Path = config_path or ROUTES_YAML_PATH
+        self._startup_time: float = time.time()
         self.app: FastAPI = FastAPI(
             title=self._name,
             description="Headwater routing gateway",
@@ -57,6 +62,25 @@ class HeadwaterRouter:
         @self.app.get("/ping")
         async def ping() -> dict:
             return {"message": "pong"}
+
+        startup_time = self._startup_time
+        server_name = self._name
+        config_path = self._config_path
+
+        @self.app.get("/logs/last", response_model=LogsLastResponse)
+        def logs_last(n: int = Query(default=50, ge=1)) -> LogsLastResponse:
+            from headwater_server.server.logging_config import ring_buffer
+            return ring_buffer.get_response(n)
+
+        @self.app.get("/status", response_model=StatusResponse)
+        async def status() -> StatusResponse:
+            from headwater_server.services.status_service.get_status import get_status_service
+            return await get_status_service(startup_time, server_name=server_name)
+
+        @self.app.get("/routes")
+        def routes() -> dict:
+            with config_path.open() as f:
+                return yaml.safe_load(f)
 
         @self.app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
         async def proxy(request: Request, path: str) -> Response:
@@ -155,6 +179,17 @@ class HeadwaterRouter:
                     context={"backend": backend_url},
                 )
                 return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
+
+            logger.debug(
+                "proxy_response",
+                extra={
+                    "service": service,
+                    "backend": backend_url,
+                    "path": path,
+                    "upstream_status": upstream.status_code,
+                    "req_id": request.state.request_id,
+                },
+            )
 
             response_headers = {
                 k: v for k, v in upstream.headers.items()
