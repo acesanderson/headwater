@@ -60,7 +60,11 @@
       "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py::test_proxy_returns_503_with_backend_unavailable_when_unreachable -v --override-ini='addopts=-v --tb=long' 2>&1\")",
       "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py::test_proxy_returns_503_with_backend_unavailable_when_unreachable -v --override-ini='addopts=-v --tb=short' 2>&1\")",
       "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv sync 2>&1 | tail -5\")",
-      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py tests/server/test_routing_config.py -v --override-ini='addopts=-v --tb=short' 2>&1\")"
+      "Bash(/bin/bash -c \"cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_router.py tests/server/test_routing_config.py -v --override-ini='addopts=-v --tb=short' 2>&1\")",
+      "Bash(conduit batch:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(/Users/bianders/Brian_Code/headwater/.venv/bin/python:*)",
+      "Bash(/Users/bianders/Brian_Code/headwater/.venv/bin/pip show:*)"
     ]
   }
 }
