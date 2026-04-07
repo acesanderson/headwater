@@ -166,5 +166,25 @@ class HeadwaterServer:
         er.register_error_handlers()
 
 
-_server = HeadwaterServer()
+def _detect_server_name() -> str:
+    _host_to_mode = {
+        "alphablue": "deepwater",
+        "caruana": "bywater",
+        "cheet": "backwater",
+    }
+    _mode_to_name = {
+        "deepwater": "Deepwater API Server",
+        "bywater": "Bywater API Server",
+        "backwater": "Backwater API Server",
+    }
+    try:
+        from dbclients.discovery.host import get_network_context
+        ctx = get_network_context()
+        mode = _host_to_mode.get(ctx.local_hostname, "deepwater")
+        return _mode_to_name.get(mode, "Headwater API Server")
+    except Exception:
+        return "Headwater API Server"
+
+
+_server = HeadwaterServer(name=_detect_server_name())
 app = _server.app
