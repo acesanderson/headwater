@@ -132,3 +132,40 @@ def test_ollama_unreachable_omits_ollama_metrics():
     text = response.text
 
     assert "headwater_ollama" not in text
+
+
+def test_backend_unreachable_shows_backend_up_zero():
+    """AC-6: When a backend is unreachable, headwater_backend_up{backend_name=...} = 0."""
+    import yaml
+    import re
+    from pathlib import Path
+    from unittest.mock import patch
+    import httpx
+    from fastapi.testclient import TestClient
+    from headwater_server.server.router import HeadwaterRouter
+    from headwater_server.server.metrics import register_router_metrics
+
+    config = {
+        "backends": {"bywater": "http://localhost:8080"},
+        "routes": {"conduit": "bywater"},
+        "heavy_models": [],
+    }
+    tmp = Path("/tmp/test_routes_ac6.yaml")
+    tmp.write_text(yaml.dump(config))
+
+    router = HeadwaterRouter(config_path=tmp)
+    register_router_metrics(router.app, router._name, router._config)
+    client = TestClient(router.app)
+
+    with patch("httpx.get", side_effect=httpx.ConnectError("backend down")):
+        response = client.get("/metrics")
+
+    assert response.status_code == 200
+    text = response.text
+
+    # Must contain headwater_backend_up with backend_name="bywater" and value 0
+    lines = [l for l in text.splitlines() if "headwater_backend_up" in l and not l.startswith("#")]
+    assert lines, "headwater_backend_up metric missing"
+    backend_line = next((l for l in lines if 'backend_name="bywater"' in l), None)
+    assert backend_line is not None, f"No line with backend_name=bywater in: {lines}"
+    assert backend_line.strip().endswith("0.0"), f"Expected 0.0, got: {backend_line}"
