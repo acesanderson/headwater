@@ -20,12 +20,13 @@ async def process_siphon_service(request: SiphonRequest) -> SiphonResponse:
     source_origin: SourceOrigin = request.origin
     use_cache = request.params.use_cache
     action: ActionType = request.params.action
+    diarize: bool = request.params.diarize
     match source_origin:
         case SourceOrigin.FILE_PATH:
             with ensure_temp_file(request) as file_path:
                 pipeline = SiphonPipeline()
                 payload: PipelineClass = await pipeline.process(
-                    str(file_path), action=action, use_cache=use_cache
+                    str(file_path), action=action, use_cache=use_cache, diarize=diarize
                 )
             # With temp file having served its purpose, reassign the original request path
             if isinstance(payload, SourceInfo):
@@ -35,7 +36,7 @@ async def process_siphon_service(request: SiphonRequest) -> SiphonResponse:
         case SourceOrigin.URL:
             pipeline = SiphonPipeline()
             payload = await pipeline.process(
-                request.source, action=action, use_cache=use_cache
+                request.source, action=action, use_cache=use_cache, diarize=diarize
             )
     # Construct response
     source_type = payload.source_type
