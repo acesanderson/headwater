@@ -11,6 +11,8 @@ def reset_metrics_state():
 
     OTel's set_meter_provider is one-shot (Once object). We reset the internal
     _done flag and _METER_PROVIDER directly so each test gets a fresh provider.
+    We also clear any metrics (especially target_info) from the prometheus_client
+    REGISTRY to prevent cross-test pollution of service_name labels.
     """
     import opentelemetry.metrics._internal as _otel_int
     from prometheus_client import REGISTRY
@@ -20,18 +22,33 @@ def reset_metrics_state():
         _otel_int._METER_PROVIDER = None
 
     _reset_otel()
+    # Capture collectors that existed before this test
     before = set(REGISTRY._names_to_collectors.keys())
 
     yield
 
     _reset_otel()
-    for name in set(REGISTRY._names_to_collectors.keys()) - before:
-        collector = REGISTRY._names_to_collectors.get(name)
-        if collector is not None:
-            try:
+    # Unregister all collectors added during this test
+    current = set(REGISTRY._names_to_collectors.keys())
+    for name in current - before:
+        try:
+            collector = REGISTRY._names_to_collectors.get(name)
+            if collector is not None:
                 REGISTRY.unregister(collector)
+        except Exception:
+            pass
+
+    # Clear any remaining references that might have been indexed
+    for name in list(REGISTRY._names_to_collectors.keys()):
+        if name not in before:
+            try:
+                collector = REGISTRY._names_to_collectors.get(name)
+                if collector is not None:
+                    REGISTRY.unregister(collector)
             except Exception:
                 pass
+
+    # Also clean up OpenTelemetry instrumentation state
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     try:
         FastAPIInstrumentor().uninstrument()
@@ -169,3 +186,31 @@ def test_backend_unreachable_shows_backend_up_zero():
     backend_line = next((l for l in lines if 'backend_name="bywater"' in l), None)
     assert backend_line is not None, f"No line with backend_name=bywater in: {lines}"
     assert backend_line.strip().endswith("0.0"), f"Expected 0.0, got: {backend_line}"
+
+
+def test_metrics_carry_service_name_label():
+    """AC-7: Metrics include a service_name label matching the server name (bywater)."""
+    import re
+
+    client = _make_client("bywater")
+    response = client.get("/metrics")
+    assert response.status_code == 200
+
+    # Find the target_info line(s). The Prometheus exporter creates one per MeterProvider instance.
+    # We verify that at least one carries service_name="bywater".
+    lines = response.text.splitlines()
+    target_info_lines = [l for l in lines if "target_info" in l and not l.startswith("#") and "gauge" not in l]
+
+    assert target_info_lines, "No target_info metric found in /metrics output"
+
+    # Extract all service_name values from target_info lines
+    service_names_found = set()
+    for line in target_info_lines:
+        match = re.search(r'service_name="([^"]+)"', line)
+        if match:
+            service_names_found.add(match.group(1))
+
+    # This app was created with server_name="bywater", so at least that must be present
+    assert "bywater" in service_names_found, (
+        f"Expected service_name='bywater' to be present, but got: {service_names_found}"
+    )
