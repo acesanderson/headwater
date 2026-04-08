@@ -188,3 +188,6 @@ def _detect_server_name() -> str:
 
 _server = HeadwaterServer(name=_detect_server_name())
 app = _server.app
+
+from headwater_server.server.metrics import register_metrics
+register_metrics(app, _server._name)
