@@ -77,11 +77,34 @@ def register_router_metrics(
     provider = MeterProvider(resource=resource, metric_readers=[reader])
     otel_metrics.set_meter_provider(provider)
 
-    app.mount("/metrics", make_asgi_app())
+    _mount_metrics_before_catchall(app, make_asgi_app())
     FastAPIInstrumentor().instrument_app(app)
 
     meter = otel_metrics.get_meter("headwater")
     _register_backend_metrics(meter, router_config)
+
+
+def _mount_metrics_before_catchall(app: FastAPI, metrics_app) -> None:
+    """Mount the Prometheus ASGI app at /metrics, inserted before any catch-all route.
+
+    FastAPI/Starlette resolves routes in registration order.  A catch-all
+    ``/{path:path}`` swallows /metrics if the mount is appended afterwards.
+    This helper inserts the Mount at the position just before the first
+    catch-all route, ensuring /metrics is matched first.
+    """
+    from starlette.routing import Mount
+
+    mount = Mount("/metrics", app=metrics_app)
+    routes = app.router.routes
+
+    # Find the index of the first catch-all APIRoute (path == "/{path:path}")
+    insert_at = len(routes)  # default: append
+    for i, route in enumerate(routes):
+        if getattr(route, "path", "") == "/{path:path}":
+            insert_at = i
+            break
+
+    routes.insert(insert_at, mount)
 
 
 def _register_gpu_metrics(meter) -> None:
