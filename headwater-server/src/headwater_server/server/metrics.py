@@ -12,37 +12,38 @@ if TYPE_CHECKING:
 def register_metrics(app: FastAPI, server_name: str) -> None:
     """Register OTel metrics for a subserver (bywater/deepwater).
 
-    Mounts /metrics on app, activates HTTP auto-instrumentation,
-    and registers GPU + Ollama observable gauges.
-    Idempotent: returns early if an SDK MeterProvider is already active.
+    Mounts /metrics on app and activates HTTP auto-instrumentation (per-app).
+    Registers GPU + Ollama observable gauges only once (global OTel setup).
     """
     from opentelemetry import metrics as otel_metrics
     from opentelemetry.sdk.metrics import MeterProvider as SdkMeterProvider
-
-    if isinstance(otel_metrics.get_meter_provider(), SdkMeterProvider):
-        return
-
-    from opentelemetry.sdk.metrics import MeterProvider
-    from opentelemetry.sdk.resources import Resource, SERVICE_NAME
-    from opentelemetry.exporter.prometheus import PrometheusMetricReader
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from prometheus_client import make_asgi_app
 
-    resource = Resource.create({
-        SERVICE_NAME: server_name,
-        "host.name": os.uname().nodename,
-        "service.version": importlib.metadata.version("headwater_server"),
-    })
-    reader = PrometheusMetricReader()
-    provider = MeterProvider(resource=resource, metric_readers=[reader])
-    otel_metrics.set_meter_provider(provider)
+    already_configured = isinstance(otel_metrics.get_meter_provider(), SdkMeterProvider)
 
+    if not already_configured:
+        from opentelemetry.sdk.metrics import MeterProvider
+        from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+        from opentelemetry.exporter.prometheus import PrometheusMetricReader
+
+        resource = Resource.create({
+            SERVICE_NAME: server_name,
+            "host.name": os.uname().nodename,
+            "service.version": importlib.metadata.version("headwater_server"),
+        })
+        reader = PrometheusMetricReader()
+        provider = MeterProvider(resource=resource, metric_readers=[reader])
+        otel_metrics.set_meter_provider(provider)
+
+    # Per-app setup: always run for each app instance.
     app.mount("/metrics", make_asgi_app())
     FastAPIInstrumentor().instrument_app(app)
 
-    meter = otel_metrics.get_meter("headwater")
-    _register_gpu_metrics(meter)
-    _register_ollama_metrics(meter)
+    if not already_configured:
+        meter = otel_metrics.get_meter("headwater")
+        _register_gpu_metrics(meter)
+        _register_ollama_metrics(meter)
 
 
 def register_router_metrics(
@@ -52,36 +53,36 @@ def register_router_metrics(
 ) -> None:
     """Register OTel metrics for the router.
 
-    Mounts /metrics on app, activates HTTP auto-instrumentation,
-    and registers backend health gauges.
-    Idempotent: returns early if an SDK MeterProvider is already active.
+    Adds /metrics route and activates HTTP auto-instrumentation (per-app).
+    Registers backend health gauges only once (global OTel setup).
     """
     from opentelemetry import metrics as otel_metrics
     from opentelemetry.sdk.metrics import MeterProvider as SdkMeterProvider
-
-    if isinstance(otel_metrics.get_meter_provider(), SdkMeterProvider):
-        return
-
-    from opentelemetry.sdk.metrics import MeterProvider
-    from opentelemetry.sdk.resources import Resource, SERVICE_NAME
-    from opentelemetry.exporter.prometheus import PrometheusMetricReader
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    from prometheus_client import make_asgi_app
 
-    resource = Resource.create({
-        SERVICE_NAME: server_name,
-        "host.name": os.uname().nodename,
-        "service.version": importlib.metadata.version("headwater_server"),
-    })
-    reader = PrometheusMetricReader()
-    provider = MeterProvider(resource=resource, metric_readers=[reader])
-    otel_metrics.set_meter_provider(provider)
+    already_configured = isinstance(otel_metrics.get_meter_provider(), SdkMeterProvider)
 
+    if not already_configured:
+        from opentelemetry.sdk.metrics import MeterProvider
+        from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+        from opentelemetry.exporter.prometheus import PrometheusMetricReader
+
+        resource = Resource.create({
+            SERVICE_NAME: server_name,
+            "host.name": os.uname().nodename,
+            "service.version": importlib.metadata.version("headwater_server"),
+        })
+        reader = PrometheusMetricReader()
+        provider = MeterProvider(resource=resource, metric_readers=[reader])
+        otel_metrics.set_meter_provider(provider)
+
+    # Per-app setup: always run for each app instance.
     _add_metrics_route(app)
     FastAPIInstrumentor().instrument_app(app)
 
-    meter = otel_metrics.get_meter("headwater")
-    _register_backend_metrics(meter, router_config)
+    if not already_configured:
+        meter = otel_metrics.get_meter("headwater")
+        _register_backend_metrics(meter, router_config)
 
 
 def _add_metrics_route(app: FastAPI) -> None:
