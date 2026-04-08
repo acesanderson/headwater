@@ -26,6 +26,10 @@ dependencies = [
     "rerankers[flashrank,api]>=0.10.0",
     "einops>=0.8.2",
     "nvidia-ml-py>=12.0",
+    "opentelemetry-sdk>=1.25",
+    "opentelemetry-exporter-prometheus>=0.46b0",
+    "opentelemetry-instrumentation-fastapi>=0.46b0",
+    "opentelemetry-instrumentation-httpx>=0.46b0",
 ]
 
 # ── Hatchling (build) ──────────────────────────────────────────────────────────
