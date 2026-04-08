@@ -116,3 +116,19 @@ def test_gpu_unavailable_shows_zero_and_omits_gpu_gauges():
 
     # HTTP metrics from auto-instrumentation must still be present
     assert "http_server" in text or "http_request" in text
+
+
+def test_ollama_unreachable_omits_ollama_metrics():
+    """AC-5: When Ollama HTTP call raises ConnectError, no headwater_ollama_* lines appear."""
+    from unittest.mock import patch
+    import httpx
+
+    client = _make_client("bywater")
+
+    with patch("httpx.get", side_effect=httpx.ConnectError("ollama not running")):
+        response = client.get("/metrics")
+
+    assert response.status_code == 200
+    text = response.text
+
+    assert "headwater_ollama" not in text
