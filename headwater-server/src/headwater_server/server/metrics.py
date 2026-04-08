@@ -77,34 +77,53 @@ def register_router_metrics(
     provider = MeterProvider(resource=resource, metric_readers=[reader])
     otel_metrics.set_meter_provider(provider)
 
-    _mount_metrics_before_catchall(app, make_asgi_app())
+    _add_metrics_route(app)
     FastAPIInstrumentor().instrument_app(app)
 
     meter = otel_metrics.get_meter("headwater")
     _register_backend_metrics(meter, router_config)
 
 
-def _mount_metrics_before_catchall(app: FastAPI, metrics_app) -> None:
-    """Mount the Prometheus ASGI app at /metrics, inserted before any catch-all route.
+def _add_metrics_route(app: FastAPI) -> None:
+    """Register GET /metrics as a FastAPI APIRoute, inserted before the catch-all.
 
-    FastAPI/Starlette resolves routes in registration order.  A catch-all
-    ``/{path:path}`` swallows /metrics if the mount is appended afterwards.
-    This helper inserts the Mount at the position just before the first
-    catch-all route, ensuring /metrics is matched first.
+    Using app.mount() for the Prometheus ASGI app conflicts with the router's
+    catch-all ``/{path:path}`` APIRoute — Starlette mounts do not take
+    priority over FastAPI APIRoutes.  Using @app.get() appends to the end of
+    the route list, also losing to the catch-all.
+
+    The fix: build the APIRoute directly and insert it before the catch-all.
+
+    Uses CONTENT_TYPE_PLAIN_0_0_4 to match the content type that make_asgi_app()
+    produces by default (text/plain; version=0.0.4).
     """
-    from starlette.routing import Mount
+    from fastapi import Response as FastAPIResponse
+    from fastapi.routing import APIRoute
+    from prometheus_client import generate_latest
+    from prometheus_client.exposition import CONTENT_TYPE_PLAIN_0_0_4
 
-    mount = Mount("/metrics", app=metrics_app)
+    def metrics_endpoint() -> FastAPIResponse:
+        return FastAPIResponse(
+            content=generate_latest(),
+            media_type=CONTENT_TYPE_PLAIN_0_0_4,
+        )
+
+    route = APIRoute(
+        path="/metrics",
+        endpoint=metrics_endpoint,
+        methods=["GET"],
+        include_in_schema=False,
+        name="metrics_endpoint",
+    )
+
     routes = app.router.routes
-
-    # Find the index of the first catch-all APIRoute (path == "/{path:path}")
-    insert_at = len(routes)  # default: append
-    for i, route in enumerate(routes):
-        if getattr(route, "path", "") == "/{path:path}":
+    insert_at = len(routes)
+    for i, r in enumerate(routes):
+        if getattr(r, "path", "") == "/{path:path}":
             insert_at = i
             break
 
-    routes.insert(insert_at, mount)
+    routes.insert(insert_at, route)
 
 
 def _register_gpu_metrics(meter) -> None:

@@ -259,6 +259,7 @@ class HeadwaterRouter:
 
 # Module-level app for uvicorn and import checks.
 # On machines without routes.yaml, falls back to a bare FastAPI instance.
+_router = None
 try:
     _router = HeadwaterRouter()
     app = _router.app
@@ -268,3 +269,7 @@ except FileNotFoundError:
         description="Headwater routing gateway",
         version="1.0.0",
     )
+
+if _router is not None:
+    from headwater_server.server.metrics import register_router_metrics
+    register_router_metrics(_router.app, _router._name, _router._config)
