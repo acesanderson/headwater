@@ -45,3 +45,12 @@ def test_bywater_metrics_returns_200_with_prometheus_content_type():
     assert response.status_code == 200
     assert "text/plain" in response.headers["content-type"]
     assert "version=0.0.4" in response.headers["content-type"]
+
+
+def test_deepwater_metrics_returns_200_with_prometheus_content_type():
+    """AC-2: GET /metrics on deepwater returns 200 with text/plain; version=0.0.4."""
+    client = _make_client("deepwater")
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    assert "version=0.0.4" in response.headers["content-type"]
