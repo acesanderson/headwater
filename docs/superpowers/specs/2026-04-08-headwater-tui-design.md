@@ -22,6 +22,12 @@ Two scripts, no shared state, no IPC. Each uses `uv run` with inline dependencie
 
 Both scripts use **Rich** (`rich.live.Live`) for rendering. No Textual — Rich's `Live` + `Layout` + `Panel` covers everything needed without the added complexity.
 
+**Rendering approach for screen 1:** Rich `Live` with a fixed-height logo panel at the top and a capped log table filling the remainder. Rich redraws by repositioning the cursor and overwriting in place (not clear-screen), so flicker at 1s intervals is imperceptible. The table is capped at `terminal_height - header_height` rows and drops the oldest on overflow.
+
+The terminal escape-code scroll region approach (used in the existing `logo.py` server startup) was considered and rejected — it is unreliable across terminal emulators and breaks on resize. Rich `Live` handles resize events correctly via `console.size`.
+
+If Rich `Live` causes rendering issues on Lasker's terminal emulator in practice, Textual (`Header` + `RichLog`) is the clean upgrade path — logic unchanged, rendering layer swapped.
+
 ---
 
 ## Screen 1 — `hw-log` (left)
@@ -188,9 +194,17 @@ This is the only new server-side work required. One endpoint, one `psutil` call,
 ## Technology
 
 - **Runtime:** Python 3.12, `uv run` with inline script metadata
-- **Rendering:** `rich` — `Live`, `Layout`, `Panel`, `Text`, `Progress`
-- **HTTP client:** `httpx` (already a headwater-client dep) or `HeadwaterClient` directly
+- **Rendering:** `rich` — `Live`, `Layout`, `Panel`, `Text`, `Progress` — used for both screens
+- **HTTP client:** `HeadwaterClient` (sync) for ring buffer polling; raw `httpx` for `/gpu` and `/sysinfo` subserver calls
 - **Dependencies:** `rich`, `httpx`, `headwater-client` (installed on Lasker)
+
+### Key rendering decisions
+
+| Decision | Chosen | Rejected | Reason |
+|---|---|---|---|
+| Screen 1 rendering | Rich `Live` (cursor reposition) | Escape-code scroll region | Escape codes unreliable across terminal emulators and on resize |
+| Screen 2 rendering | Rich `Live` | — | Static panel layout, 2s refresh, no flicker concern |
+| Framework | Rich | Textual | Sufficient for read-only display; Textual is upgrade path if needed |
 
 ---
 
