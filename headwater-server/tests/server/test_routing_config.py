@@ -68,32 +68,32 @@ def test_route_referencing_undefined_backend_raises_routing_config_error(tmp_pat
 
 def test_conduit_light_model_routes_to_bywater(config: RouterConfig):
     """AC-3: conduit request with a non-heavy model routes to Bywater."""
-    result = resolve_backend("conduit", "llama3.2:3b", config)
-    assert result == "http://172.16.0.4:8080"  # bywater
+    url, _ = resolve_backend("conduit", "llama3.2:3b", config)
+    assert url == "http://172.16.0.4:8080"  # bywater
 
 
 def test_conduit_heavy_model_routes_to_deepwater(config: RouterConfig):
     """AC-4: conduit request with a heavy model routes to Deepwater."""
-    result = resolve_backend("conduit", "qwq:latest", config)
-    assert result == "http://172.16.0.2:8080"  # deepwater
+    url, _ = resolve_backend("conduit", "qwq:latest", config)
+    assert url == "http://172.16.0.2:8080"  # deepwater
 
 
 def test_reranker_heavy_model_routes_to_bywater(config: RouterConfig):
     """AC-5: reranker request with a heavy model routes to Bywater (reranker_heavy)."""
-    result = resolve_backend("reranker", "qwq:latest", config)
-    assert result == "http://172.16.0.4:8080"  # bywater — reranker_heavy
+    url, _ = resolve_backend("reranker", "qwq:latest", config)
+    assert url == "http://172.16.0.4:8080"  # bywater — reranker_heavy
 
 
 def test_reranker_light_model_routes_to_backwater(config: RouterConfig):
     """AC-5: reranker request with a non-heavy model routes to Backwater (reranker_light)."""
-    result = resolve_backend("reranker", "some-light-reranker", config)
-    assert result == "http://172.16.0.9:8080"  # backwater — reranker_light
+    url, _ = resolve_backend("reranker", "some-light-reranker", config)
+    assert url == "http://172.16.0.9:8080"  # backwater — reranker_light
 
 
 def test_reranker_none_model_routes_to_backwater(config: RouterConfig):
     """AC-5: reranker request with no model name routes to Backwater (treated as light)."""
-    result = resolve_backend("reranker", None, config)
-    assert result == "http://172.16.0.9:8080"  # backwater — reranker_light
+    url, _ = resolve_backend("reranker", None, config)
+    assert url == "http://172.16.0.9:8080"  # backwater — reranker_light
 
 
 def test_unknown_service_raises_routing_error(config: RouterConfig):
@@ -101,3 +101,32 @@ def test_unknown_service_raises_routing_error(config: RouterConfig):
     with pytest.raises(RoutingError) as exc_info:
         resolve_backend("unknown_service", None, config)
     assert "unknown_service" in str(exc_info.value)
+
+
+def test_resolve_backend_returns_tuple_for_conduit(config: RouterConfig):
+    """resolve_backend returns (url, route_key) tuple for standard conduit route."""
+    result = resolve_backend("conduit", None, config)
+    assert isinstance(result, tuple), "Expected tuple, got non-tuple"
+    assert len(result) == 2
+    url, route_key = result
+    assert url == "http://172.16.0.4:8080"
+    assert route_key == "conduit"
+
+
+def test_resolve_backend_returns_tuple_for_heavy_conduit(config: RouterConfig):
+    """conduit + heavy model → heavy_inference route key."""
+    url, route_key = resolve_backend("conduit", "qwq:latest", config)
+    assert url == "http://172.16.0.2:8080"
+    assert route_key == "heavy_inference"
+
+
+def test_resolve_backend_returns_tuple_for_reranker_light(config: RouterConfig):
+    """reranker + non-heavy model → reranker_light route key."""
+    url, route_key = resolve_backend("reranker", "small-model", config)
+    assert route_key == "reranker_light"
+
+
+def test_resolve_backend_returns_tuple_for_reranker_heavy(config: RouterConfig):
+    """reranker + heavy model → reranker_heavy route key."""
+    url, route_key = resolve_backend("reranker", "qwq:latest", config)
+    assert route_key == "reranker_heavy"

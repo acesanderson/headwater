@@ -68,9 +68,9 @@ def load_router_config(path: Path = ROUTES_YAML_PATH) -> RouterConfig:
     )
 
 
-def resolve_backend(service: str, model: str | None, config: RouterConfig) -> str:
+def resolve_backend(service: str, model: str | None, config: RouterConfig) -> tuple[str, str]:
     """
-    Return backend base_url for the given service and model.
+    Return (backend_base_url, route_key) for the given service and model.
 
     Resolution order:
     1. conduit + heavy model → heavy_inference backend
@@ -84,18 +84,20 @@ def resolve_backend(service: str, model: str | None, config: RouterConfig) -> st
     is_heavy = model is not None and model in config.heavy_models
 
     if service == "conduit" and is_heavy:
-        backend_name = config.routes["heavy_inference"]
-        return config.backends[backend_name]
+        route_key = "heavy_inference"
+        backend_name = config.routes[route_key]
+        return config.backends[backend_name], route_key
 
     if service == "reranker":
-        key = "reranker_heavy" if is_heavy else "reranker_light"
-        backend_name = config.routes[key]
-        return config.backends[backend_name]
+        route_key = "reranker_heavy" if is_heavy else "reranker_light"
+        backend_name = config.routes[route_key]
+        return config.backends[backend_name], route_key
 
     if service not in config.routes:
         raise RoutingError(
             f"Unknown service '{service}'. Known services: {sorted(config.routes.keys())}"
         )
 
+    route_key = service
     backend_name = config.routes[service]
-    return config.backends[backend_name]
+    return config.backends[backend_name], route_key
