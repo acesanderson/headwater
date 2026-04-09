@@ -124,7 +124,7 @@ class HeadwaterRouter:
 
             try:
                 from headwater_server.server.routing_config import resolve_backend
-                backend_url = resolve_backend(service, model, config)
+                backend_url, route_key = resolve_backend(service, model, config)
             except RoutingError as exc:
                 error = HeadwaterServerError(
                     error_type=ErrorType.ROUTING_ERROR,
@@ -153,6 +153,7 @@ class HeadwaterRouter:
                     "backend": backend_url,
                     "model": model,
                     "path": path,
+                    "route": route_key,
                 },
             )
 

@@ -140,3 +140,60 @@ def test_router_main_is_callable():
     """router_main entry point function exists and is callable."""
     from headwater_server.server.main import router_main
     assert callable(router_main)
+
+
+def test_proxy_request_log_includes_route_field(router_client: TestClient):
+    """AC-2: proxy_request log record extra dict contains 'route' field with resolved route key."""
+    from headwater_server.server.logging_config import ring_buffer
+
+    mock_response = MagicMock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.content = b'{"result": "ok"}'
+    mock_response.headers = {}
+
+    before_count = len(list(ring_buffer._buffer))
+
+    with patch("headwater_server.server.router.httpx") as mock_httpx:
+        mock_async_client = AsyncMock()
+        mock_async_client.__aenter__ = AsyncMock(return_value=mock_async_client)
+        mock_async_client.__aexit__ = AsyncMock(return_value=None)
+        mock_async_client.request = AsyncMock(return_value=mock_response)
+        mock_httpx.AsyncClient.return_value = mock_async_client
+
+        router_client.post("/conduit/generate", json={"prompt": "hello"})
+
+    records = ring_buffer.get_records(500)
+    new_records = records[before_count:]
+    proxy_req_records = [r for r in new_records if r["message"] == "proxy_request"]
+    assert proxy_req_records, "No proxy_request record found"
+    extra = proxy_req_records[-1].get("extra") or {}
+    assert "route" in extra, f"'route' missing from proxy_request extra: {extra}"
+    assert extra["route"] == "conduit"
+
+
+def test_proxy_request_log_route_is_heavy_inference_for_heavy_model(router_client: TestClient):
+    """AC-2: heavy model routes to heavy_inference; route field reflects this."""
+    from headwater_server.server.logging_config import ring_buffer
+
+    mock_response = MagicMock(spec=httpx.Response)
+    mock_response.status_code = 200
+    mock_response.content = b'{}'
+    mock_response.headers = {}
+
+    before_count = len(list(ring_buffer._buffer))
+
+    with patch("headwater_server.server.router.httpx") as mock_httpx:
+        mock_async_client = AsyncMock()
+        mock_async_client.__aenter__ = AsyncMock(return_value=mock_async_client)
+        mock_async_client.__aexit__ = AsyncMock(return_value=None)
+        mock_async_client.request = AsyncMock(return_value=mock_response)
+        mock_httpx.AsyncClient.return_value = mock_async_client
+
+        router_client.post("/conduit/generate", json={"model": "qwq:latest", "prompt": "think"})
+
+    records = ring_buffer.get_records(500)
+    new_records = records[before_count:]
+    proxy_req_records = [r for r in new_records if r["message"] == "proxy_request"]
+    assert proxy_req_records
+    extra = proxy_req_records[-1].get("extra") or {}
+    assert extra.get("route") == "heavy_inference"
