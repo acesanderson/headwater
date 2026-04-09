@@ -332,6 +332,42 @@ If `/sysinfo` returns 404 (server not yet updated), hw-vitals shows `cpu —` an
 
 ---
 
+## Human-in-the-Loop Review Gates
+
+TUI output is visually opaque to automated verification. Six explicit HITL gates are required during implementation. The plan must pause at each gate and not proceed until the user approves.
+
+**Gate 1 — Header only (hw-log)**  
+Implement the HEADWATER logo + status line only. Run on Lasker before any log rows are built.  
+*Assess:* block character rendering, font/terminal emulator choice, font size, logo legibility.  
+*Possible outcomes:* switch terminal emulator, change font size, fall back to smaller logo variant.
+
+**Gate 2 — Live log rows, no color (hw-log)**  
+Plain unstyled rows scrolling from real traffic. No color, no filtering applied yet.  
+*Assess:* column widths with real request paths (`siphon/process_document_with_audio` etc.), truncation, 1s refresh flicker on Lasker.  
+*Possible outcomes:* adjust column widths, shorten SERVICE/PATH, widen MODEL, change poll interval, escalate to Textual if flicker is unacceptable.
+
+**Gate 3 — Full hw-log with color and filtering**  
+All colors applied, route highlighting active, internal requests filtered.  
+*Assess:* purple/amber route distinction, muted timestamp legibility, overall color harmony at viewing distance.  
+*Possible outcomes:* color value adjustments, muting level changes.
+
+**Gate 4 — hw-vitals panel layout with static/mock data**  
+Both panels rendering with hardcoded values; no live API calls yet.  
+*Assess:* progress bar visibility, two-column grid on actual screen real estate, temperature placement in header.  
+*Possible outcomes:* bar height, label positioning, grid density changes.
+
+**Gate 5 — hw-vitals with live data**  
+Real GPU names (e.g. `NVIDIA GeForce RTX 3090`), real model names (`deepseek-r1:70b`), real temps.  
+*Assess:* layout breaks from longer-than-expected strings, truncation behaviour with real data.  
+*Possible outcomes:* truncation rules for GPU name and model name fields.
+
+**Gate 6 — Both screens on Lasker simultaneously**  
+Final integration: both scripts running, both 7" screens live side by side.  
+*Assess:* readability at viewing distance, ambient light, complementarity of the two screens.  
+*Possible outcomes:* font size increase, terminal emulator brightness/contrast tuning, column visibility changes.
+
+---
+
 ## Deployment
 
 Lasker runs Ubuntu Server + Sway. Each script is opened in a terminal emulator (e.g. `foot`) assigned to its output via Sway config:
