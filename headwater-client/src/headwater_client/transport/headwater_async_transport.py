@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from headwater_api.classes import (
+    GpuResponse,
     HeadwaterServerError,
     HeadwaterServerException,
+    RouterGpuResponse,
     StatusResponse,
 )
 from dbclients.discovery.host import get_network_context
@@ -274,3 +276,19 @@ class HeadwaterAsyncTransport:
         )
         response.raise_for_status()
         return response.json()
+
+    async def get_gpu(self) -> GpuResponse | RouterGpuResponse:
+        """Fetch GPU stats. Returns RouterGpuResponse from the router, GpuResponse from subservers."""
+        response = await self._request("GET", "/gpu")
+        if self._host_alias == "headwater":
+            return RouterGpuResponse.model_validate_json(response)
+        return GpuResponse.model_validate_json(response)
+
+    async def get_metrics(self) -> str:
+        """Fetch Prometheus metrics in text exposition format (GET /metrics)."""
+        return await self._request("GET", "/metrics")
+
+    async def get_sysinfo(self) -> dict:
+        """Fetch CPU and RAM stats from a subserver (GET /sysinfo)."""
+        import json
+        return json.loads(await self._request("GET", "/sysinfo"))

@@ -30,7 +30,7 @@ from headwater_client.api.openai_async_api import OpenAICompatAsyncAPI
 from headwater_client.api.reranker_async_api import RerankerAsyncAPI
 from headwater_client.api.siphon_async_api import SiphonAsyncAPI
 from headwater_client.transport.headwater_async_transport import HeadwaterAsyncTransport
-from headwater_api.classes import LogsLastResponse, StatusResponse
+from headwater_api.classes import GpuResponse, LogsLastResponse, RouterGpuResponse, StatusResponse
 
 
 class HeadwaterAsyncClient:
@@ -81,3 +81,15 @@ class HeadwaterAsyncClient:
     async def list_routes(self) -> dict:
         """List available API routes."""
         return await self._transport.list_routes()
+
+    async def get_gpu(self) -> GpuResponse | RouterGpuResponse:
+        """Fetch GPU stats. Router returns RouterGpuResponse; subservers return GpuResponse."""
+        return await self._transport.get_gpu()
+
+    async def get_metrics(self) -> str:
+        """Fetch Prometheus metrics in text exposition format (GET /metrics)."""
+        return await self._transport.get_metrics()
+
+    async def get_sysinfo(self) -> dict:
+        """Fetch CPU and RAM stats from a subserver (GET /sysinfo)."""
+        return await self._transport.get_sysinfo()

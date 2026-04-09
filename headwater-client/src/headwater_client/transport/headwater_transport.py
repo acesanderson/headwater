@@ -263,3 +263,12 @@ class HeadwaterTransport:
         if self._host_alias == "headwater":
             return RouterGpuResponse.model_validate_json(response)
         return GpuResponse.model_validate_json(response)
+
+    def get_metrics(self) -> str:
+        """Fetch Prometheus metrics in text exposition format (GET /metrics)."""
+        return self._request("GET", "/metrics")
+
+    def get_sysinfo(self) -> dict:
+        """Fetch CPU and RAM stats from a subserver (GET /sysinfo)."""
+        import json
+        return json.loads(self._request("GET", "/sysinfo"))

@@ -57,3 +57,11 @@ class HeadwaterClient:
     def get_gpu(self) -> GpuResponse | RouterGpuResponse:
         """Fetch GPU stats. Router returns RouterGpuResponse; subservers return GpuResponse."""
         return self._transport.get_gpu()
+
+    def get_metrics(self) -> str:
+        """Fetch Prometheus metrics in text exposition format (GET /metrics)."""
+        return self._transport.get_metrics()
+
+    def get_sysinfo(self) -> dict:
+        """Fetch CPU and RAM stats from a subserver (GET /sysinfo)."""
+        return self._transport.get_sysinfo()
