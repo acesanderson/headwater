@@ -9,6 +9,7 @@ class LogEntry(BaseModel):
     message: str
     pathname: str
     request_id: str | None = None
+    extra: dict[str, str | int | float | bool | None] | None = None
 
 
 class LogsLastResponse(BaseModel):

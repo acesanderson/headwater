@@ -57,3 +57,56 @@ def test_third_party_loggers_suppressed_at_warning():
     assert uvicorn_error_level != logging.WARNING, (
         "uvicorn.error must not be suppressed — it reports worker crashes"
     )
+
+
+def test_log_entry_has_extra_field():
+    """LogEntry accepts extra dict with primitive values."""
+    from headwater_api.classes.server_classes.logs import LogEntry
+    entry = LogEntry(
+        timestamp=1.0, level="DEBUG", logger="test", message="msg",
+        pathname="/x.py", request_id="abc",
+        extra={"service": "conduit", "upstream_status": 200, "model": None},
+    )
+    assert entry.extra == {"service": "conduit", "upstream_status": 200, "model": None}
+
+
+def test_log_entry_extra_defaults_to_none():
+    """LogEntry.extra is None when not provided (backward compat)."""
+    from headwater_api.classes.server_classes.logs import LogEntry
+    entry = LogEntry(timestamp=1.0, level="DEBUG", logger="t", message="m", pathname="/p")
+    assert entry.extra is None
+
+
+def test_ring_buffer_extra_serializes_service_field(caplog):
+    """Ring buffer get_records() includes 'service' from logger.extra in the LogEntry.extra dict."""
+    import logging
+    import headwater_server.server.logging_config  # ensure record factory registered
+    from headwater_server.server.logging_config import ring_buffer
+
+    before = len(list(ring_buffer._buffer))
+    logging.getLogger("test.extra").debug("proxy_request", extra={"service": "conduit", "backend": "http://x:8080"})
+
+    records = ring_buffer.get_records(500)
+    new = [r for r in records[before:] if r["message"] == "proxy_request"]
+    assert new, "proxy_request record not found in ring buffer"
+    assert new[-1].get("extra", {}).get("service") == "conduit"
+    assert new[-1].get("extra", {}).get("backend") == "http://x:8080"
+
+
+def test_ring_buffer_extra_excludes_standard_log_attrs(caplog):
+    """Standard LogRecord attributes are not duplicated in extra."""
+    import logging
+    import headwater_server.server.logging_config
+    from headwater_server.server.logging_config import ring_buffer
+
+    before = len(list(ring_buffer._buffer))
+    logging.getLogger("test.nodup").debug("sentinel_noduplicate", extra={"my_field": "value"})
+
+    records = ring_buffer.get_records(500)
+    new = [r for r in records[before:] if r["message"] == "sentinel_noduplicate"]
+    assert new, "record not found"
+    extra = new[-1].get("extra") or {}
+    # Standard attrs must not appear in extra
+    for banned in ("name", "levelname", "pathname", "filename", "lineno", "funcName"):
+        assert banned not in extra, f"standard attr '{banned}' leaked into extra"
+    assert extra.get("my_field") == "value"

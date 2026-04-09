@@ -23,6 +23,15 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 
+_STANDARD_LOG_ATTRS = frozenset({
+    "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
+    "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
+    "created", "msecs", "relativeCreated", "thread", "threadName",
+    "processName", "process", "message", "taskName", "request_id",
+    "root_package",  # added by PackagePathFilter
+})
+
+
 class PackagePathFilter(logging.Filter):
     """
     Prepends the root package name to record.pathname so Rich shows it in the right column.
@@ -97,17 +106,23 @@ class RingBufferHandler(logging.Handler):
         if n <= 0:
             return []
         records = list(self._buffer)
-        return [
-            {
+        result = []
+        for r in records[-n:]:
+            extra = {
+                k: v for k, v in r.__dict__.items()
+                if k not in _STANDARD_LOG_ATTRS
+                and isinstance(v, (str, int, float, bool, type(None)))
+            }
+            result.append({
                 "timestamp": r.created,
                 "level": r.levelname,
                 "logger": r.name,
                 "message": r.getMessage(),
                 "pathname": r.pathname,
                 "request_id": r.__dict__.get("request_id", None),
-            }
-            for r in records[-n:]
-        ]
+                "extra": extra if extra else None,
+            })
+        return result
 
     def get_response(self, n: int):
         from headwater_api.classes import LogsLastResponse, LogEntry
