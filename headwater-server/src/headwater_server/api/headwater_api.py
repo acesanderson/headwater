@@ -52,6 +52,11 @@ class HeadwaterServerAPI:
             from headwater_server.server.logging_config import ring_buffer
             return ring_buffer.get_response(n)
 
+        @self.app.get("/sysinfo")
+        async def sysinfo():
+            from headwater_server.services.status_service.sysinfo_service import get_sysinfo_service
+            return await get_sysinfo_service()
+
         @self.app.get("/gpu", response_model=GpuResponse)
         async def gpu():
             from headwater_server.services.gpu_service.get_gpu import get_gpu_service
