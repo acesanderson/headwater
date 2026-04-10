@@ -1,153 +1,135 @@
 # Headwater
 
-Headwater is a unified platform for content ingestion, embedding generation, and LLM orchestration. It provides a centralized server and Python client for processing documents, managing vector collections, and executing model-agnostic inference.
+Headwater is a unified API and client library for distributed LLM inference, vector embeddings, and content ingestion. It provides a centralized routing gateway to coordinate processing across multiple compute nodes, specializing in high-throughput generation and document ranking.
+
+## Installation
+
+```bash
+pip install headwater-client headwater-api
+```
+
+The project requires Python 3.12 or higher.
 
 ## Quick Start
 
-### 1. Install and Start the Server
-The server requires Python 3.12+ and manages the heavy lifting for embeddings and LLM orchestration.
-
-```bash
-pip install headwater_server
-headwater
-```
-
-### 2. Use the Client
-The client provides a high-level interface to all Headwater services.
+The system uses a centralized `HeadwaterClient` to interact with inference and embedding services.
 
 ```python
 from headwater_client.client.headwater_client import HeadwaterClient
+from headwater_api.classes import GenerationRequest
+from conduit.domain.request.generation_params import GenerationParams
+from conduit.domain.message.message import UserMessage
+
+# Initialize client pointing to the default headwater router
+client = HeadwaterClient(host_alias="headwater")
+
+# Synchronous generation query
+request = GenerationRequest(
+    messages=[UserMessage(content="Explain quantum entanglement in one sentence.")],
+    params=GenerationParams(model="haiku", max_tokens=50)
+)
+
+response = client.conduit.query_generate(request)
+print(response.message.content)
+```
+
+## Core Capabilities
+
+### LLM Inference (Conduit)
+Headwater leverages the Conduit engine to handle both synchronous generation and high-concurrency batch processing. It supports OpenAI-compatible endpoints and local model providers.
+
+```python
+from headwater_api.classes import BatchRequest
+
+# Process thousands of prompts concurrently
+batch = BatchRequest(
+    prompt_strings_list=["Prompt 1", "Prompt 2", "Prompt 3"],
+    params=GenerationParams(model="llama3.1", max_tokens=100),
+    max_concurrent=10
+)
+results = client.conduit.query_batch(batch)
+```
+
+### Vector Embeddings
+The system manages embedding generation and collection operations via ChromaDB integration. It includes an automated "research" service to fetch model specifications (dimensions, sequence length) and stores them in a local registry.
+
+```python
 from headwater_api.classes import QuickEmbeddingRequest
 
-client = HeadwaterClient()
+# Generate a single embedding
+embedding = client.embeddings.quick_embedding(
+    QuickEmbeddingRequest(query="Sample text for vectorization")
+)
 
-# Check connectivity
-if client.ping():
-    # Generate an embedding
-    req = QuickEmbeddingRequest(query="Sample text for vectorization")
-    response = client.embeddings.quick_embedding(req)
-    print(response.embedding)
+# Search an existing collection
+results = client.embeddings.query_collection(
+    QueryCollectionRequest(name="knowledge_base", query="retrieval topic", k=5)
+)
 ```
 
-## Core Value Demonstration: Semantic Search & Reranking
-
-Headwater simplifies the path from raw query to curated results by combining vector retrieval with advanced reranking models.
+### Document Reranking
+Specialized reranker support allows for re-scoring search results using models like BGE, FlashRank, or Cross-Encoders to improve retrieval precision.
 
 ```python
-from headwater_client.client.headwater_client import HeadwaterClient
-from headwater_api.classes import CuratorRequest
+from headwater_api.classes import RerankRequest
 
-client = HeadwaterClient()
-
-# Search across a collection with BGE-based reranking
-request = CuratorRequest(
-    query_string="Graph neural networks in NLP",
-    k=5,
+reranked = client.reranker.rerank(RerankRequest(
+    query="machine learning fundamentals",
+    documents=["Doc A content...", "Doc B content..."],
     model_name="flash",
-    cached=True
-)
-
-response = client.curator.curate(request)
-
-for result in response.results:
-    print(f"ID: {result.id} | Score: {result.score:.4f}")
+    k=3
+))
 ```
 
-## Architecture Overview
+### Content Extraction (Siphon)
+The Siphon service handles complex content ingestion, extracting raw text and metadata from URIs or file paths for downstream processing.
 
-Headwater is structured into three primary packages:
+## Architecture
 
-1.  **Headwater Server**: A FastAPI application that serves as the execution engine. It interfaces with local LLMs, vector databases (Chroma), and embedding models (SentenceTransformers).
-2.  **Headwater Client**: A Python SDK providing both synchronous (`HeadwaterClient`) and asynchronous (`HeadwaterAsyncClient`) transports.
-3.  **Headwater API**: A shared library of Pydantic models ensuring type safety and schema consistency between the server and clients.
+Headwater operates as a distributed system composed of a Router and several Backend Subservers:
 
-### Key Service Modules
-
-| Module | Purpose | Key Technologies |
+| Component | Description | Default Port |
 | :--- | :--- | :--- |
-| **Conduit** | LLM orchestration and batching | Ollama, OpenAI-compat |
-| **Embeddings** | Vector generation and collection management | SentenceTransformers, Chroma |
-| **Curator** | High-precision retrieval and reranking | Flashrank, Cross-Encoders |
-| **Siphon** | Content ingestion and pipeline processing | Local files, URLs |
-| **Reranker** | Standalone document scoring | Flashrank, BGE |
+| **Router** | Acts as a gateway. Resolves requests based on model weight and service type. | 8081 |
+| **Subserver** | Executes heavy compute tasks (Inference, Embeddings, Reranking). | 8080 |
 
-## Installation & Setup
+### Routing Logic
+The router inspects incoming requests and directs traffic based on a `routes.yaml` configuration. It supports "Heavy Routing," where specific large models (e.g., Llama-70B) are automatically directed to dedicated high-VRAM backends.
 
-### Prerequisites
-- Python 3.12 or higher
-- CUDA-capable GPU (recommended for embedding generation)
-- Running Ollama instance (optional, for Conduit LLM features)
+### Backend Aliases
+The client supports predefined host aliases for standard network environments:
+* `headwater`: The primary router (Gateway).
+* `bywater`, `backwater`, `deepwater`, `stillwater`: Specialized compute nodes.
 
-### Client Installation
+## Server Deployment
+
+To start a compute subserver:
 ```bash
-pip install headwater_client
+uv run hw-up
 ```
 
-### Server Configuration
-The server respects the following environment variables:
-- `PYTHON_LOG_LEVEL`: 1 (WARNING), 2 (INFO), 3 (DEBUG)
-- `COHERE_API_KEY`: Required if using Cohere reranking models
-- `JINA_API_KEY`: Required if using Jina reranking models
-
-## Basic Usage
-
-### Asynchronous Client
-For high-concurrency applications, use the `HeadwaterAsyncClient` as a context manager.
-
-```python
-import asyncio
-from headwater_client.client.headwater_client_async import HeadwaterAsyncClient
-from headwater_api.classes import GenerationRequest
-
-async def main():
-    async with HeadwaterAsyncClient() as client:
-        status = await client.get_status()
-        print(f"Server Status: {status.status}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+To start the routing gateway:
+```bash
+uv run hw-route
 ```
 
-### OpenAI Compatibility
-Headwater provides an OpenAI-compatible endpoint for integrating with existing tooling.
+The server includes built-in Prometheus metrics at `/metrics` and GPU utilization monitoring for NVIDIA hardware.
 
-```python
-from headwater_client.client.headwater_client_async import HeadwaterAsyncClient
-from headwater_api.classes import OpenAIChatRequest, OpenAIChatMessage
+## Configuration
 
-async with HeadwaterAsyncClient() as client:
-    request = OpenAIChatRequest(
-        model="headwater/llama3.1:latest",
-        messages=[OpenAIChatMessage(role="user", content="Explain late chunking")]
-    )
-    response = await client.openai.chat_completions(request)
-    print(response.choices[0].message.content)
+The system looks for a routing configuration at `~/.config/headwater/routes.yaml`.
+
+```yaml
+backends:
+  primary: "http://172.16.0.4:8080"
+  heavy: "http://172.16.0.5:8080"
+
+routes:
+  conduit: "primary"
+  embeddings: "primary"
+  heavy_inference: "heavy"
+
+heavy_models:
+  - "llama3.1:70b"
+  - "deepseek-coder:33b"
 ```
-
-### Document Ingestion (Siphon)
-Process local files or remote URLs into structured content.
-
-```python
-from siphon_api.api.siphon_request import SiphonRequest
-from siphon_api.enums import SourceOrigin, ActionType
-
-request = SiphonRequest(
-    source="https://arxiv.org/pdf/1706.03762.pdf",
-    origin=SourceOrigin.URL,
-    params={"action": ActionType.SUMMARIZE, "use_cache": True}
-)
-
-response = client.siphon.process(request)
-print(response.payload.summary)
-```
-
-## Configuration Options
-
-The `StatusResponse` provides insight into the server's current capabilities:
-
-| Field | Description |
-| :--- | :--- |
-| `status` | Current health state (healthy, degraded, error) |
-| `gpu_enabled` | Boolean indicating if CUDA is available |
-| `models_available` | List of local LLM and embedding models |
-| `uptime` | Server uptime in seconds |
