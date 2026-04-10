@@ -66,7 +66,21 @@
       "Bash(/Users/bianders/Brian_Code/headwater/.venv/bin/python:*)",
       "Bash(/Users/bianders/Brian_Code/headwater/.venv/bin/pip show:*)",
       "Bash(chmod +x:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(python:*)",
+      "Bash(ln -s /Users/bianders/Brian_Code/kramer-project /Users/bianders/.config/superpowers/worktrees/headwater/kramer-project)",
+      "Bash(ln -s /Users/bianders/Brian_Code/conduit-project /Users/bianders/.config/superpowers/worktrees/headwater/conduit-project)",
+      "Bash(ln -s /Users/bianders/Brian_Code/siphon /Users/bianders/.config/superpowers/worktrees/headwater/siphon)",
+      "Bash(ln -s /Users/bianders/Brian_Code/dbclients-project /Users/bianders/.config/superpowers/worktrees/headwater/dbclients-project)",
+      "Bash(ln -s /Users/bianders/Brian_Code/haddock-project /Users/bianders/.config/superpowers/worktrees/headwater/haddock-project)",
+      "Bash(ln -s /Users/bianders/Brian_Code/utils-project /Users/bianders/.config/superpowers/worktrees/headwater/utils-project)",
+      "Bash(printf 'q\\\\n')",
+      "Bash(command -v uv)",
+      "Read(//usr/local/bin/**)",
+      "Bash(export ZDOTDIR=/dev/null)",
+      "Bash(/bin/zsh -c 'cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run pytest tests/server/test_metrics.py::test_gpu_unavailable_shows_zero_and_omits_gpu_gauges -p no:pdb -v 2>&1 | tail -60')",
+      "Bash(/bin/zsh -c 'cd /Users/bianders/Brian_Code/headwater/headwater-server && uv run python -c \":*)",
+      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")"
     ]
   }
 }
