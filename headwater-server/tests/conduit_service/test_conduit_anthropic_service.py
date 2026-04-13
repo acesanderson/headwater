@@ -56,3 +56,57 @@ def test_anthropic_request_rejects_empty_messages():
             max_tokens=512,
             messages=[],
         )
+
+
+from unittest.mock import patch, MagicMock, AsyncMock
+from tests.conftest import make_mock_result
+
+VALID_ANTHROPIC_PAYLOAD = {
+    "model": "gpt-oss:latest",
+    "max_tokens": 512,
+    "messages": [{"role": "user", "content": "Hello"}],
+}
+
+
+def test_anthropic_valid_request_returns_200(client):
+    """AC-2: valid non-streaming request -> HTTP 200"""
+    mock_result = make_mock_result(content="Hi there!", input_tokens=10, output_tokens=5)
+    with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="gpt-oss:latest"), \
+         patch("conduit.core.model.model_async.ModelAsync") as MockModel:
+        mock_instance = MagicMock()
+        mock_instance.query = AsyncMock(return_value=mock_result)
+        MockModel.return_value = mock_instance
+        response = client.post("/v1/messages", json=VALID_ANTHROPIC_PAYLOAD)
+    assert response.status_code == 200
+
+
+def test_anthropic_response_shape(client):
+    """AC-2: response has type, role, content list, stop_reason, usage"""
+    mock_result = make_mock_result(content="Hi there!", input_tokens=10, output_tokens=5)
+    with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="gpt-oss:latest"), \
+         patch("conduit.core.model.model_async.ModelAsync") as MockModel:
+        mock_instance = MagicMock()
+        mock_instance.query = AsyncMock(return_value=mock_result)
+        MockModel.return_value = mock_instance
+        response = client.post("/v1/messages", json=VALID_ANTHROPIC_PAYLOAD)
+    body = response.json()
+    assert body["type"] == "message"
+    assert body["role"] == "assistant"
+    assert isinstance(body["content"], list)
+    assert body["content"][0]["type"] == "text"
+    assert body["content"][0]["text"] == "Hi there!"
+    assert body["stop_reason"] == "end_turn"
+    assert body["usage"]["input_tokens"] == 10
+    assert body["usage"]["output_tokens"] == 5
+
+
+def test_anthropic_response_model_echoes_request(client):
+    """AC-2: response.model matches request.model"""
+    mock_result = make_mock_result()
+    with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="gpt-oss:latest"), \
+         patch("conduit.core.model.model_async.ModelAsync") as MockModel:
+        mock_instance = MagicMock()
+        mock_instance.query = AsyncMock(return_value=mock_result)
+        MockModel.return_value = mock_instance
+        response = client.post("/v1/messages", json=VALID_ANTHROPIC_PAYLOAD)
+    assert response.json()["model"] == VALID_ANTHROPIC_PAYLOAD["model"]

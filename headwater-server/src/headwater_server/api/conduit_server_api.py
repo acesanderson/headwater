@@ -7,6 +7,7 @@ from headwater_api.classes import (
     TokenizationRequest,
     TokenizationResponse,
     OpenAIChatRequest,
+    AnthropicRequest,
 )
 
 
@@ -65,3 +66,10 @@ class ConduitServerAPI:
                 conduit_openai_service,
             )
             return await conduit_openai_service(request)
+
+        @self.app.post("/v1/messages")
+        async def conduit_anthropic_messages(request: AnthropicRequest) -> dict:
+            from headwater_server.services.conduit_service.conduit_anthropic_service import (
+                conduit_anthropic_service,
+            )
+            return await conduit_anthropic_service(request)
