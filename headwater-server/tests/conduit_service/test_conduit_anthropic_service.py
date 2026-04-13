@@ -112,13 +112,6 @@ def test_anthropic_response_model_echoes_request(client):
     assert response.json()["model"] == VALID_ANTHROPIC_PAYLOAD["model"]
 
 
-def test_stream_true_returns_422(client):
-    """AC-3: stream=true rejected with 422 in Phase 1"""
-    payload = {**VALID_ANTHROPIC_PAYLOAD, "stream": True}
-    response = client.post("/v1/messages", json=payload)
-    assert response.status_code == 422
-    assert "Streaming" in response.text
-
 
 def test_unknown_model_returns_400(client):
     """AC-4: unrecognized model -> HTTP 400 with model name in detail"""
@@ -141,3 +134,92 @@ def test_model_store_unavailable_returns_502(client):
         response = client.post("/v1/messages", json=VALID_ANTHROPIC_PAYLOAD)
     assert response.status_code == 502
     assert "unavailable" in response.json()["detail"]
+
+
+import json
+
+
+def _parse_sse_events(body: str) -> list[dict]:
+    """Parse raw SSE body into list of {event, data} dicts."""
+    events = []
+    for block in body.split("\n\n"):
+        lines = [l for l in block.strip().split("\n") if l]
+        if not lines:
+            continue
+        event_type = None
+        data = None
+        for line in lines:
+            if line.startswith("event: "):
+                event_type = line[7:]
+            elif line.startswith("data: "):
+                data = json.loads(line[6:])
+        if event_type and data is not None:
+            events.append({"event": event_type, "data": data})
+    return events
+
+
+def test_stream_true_returns_event_stream(client):
+    """AC-5: stream=true -> Content-Type: text/event-stream"""
+    mock_result = make_mock_result(content="Streaming response.", input_tokens=10, output_tokens=4)
+    payload = {**VALID_ANTHROPIC_PAYLOAD, "stream": True}
+    with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="gpt-oss:latest"), \
+         patch("conduit.core.model.model_async.ModelAsync") as MockModel:
+        mock_instance = MagicMock()
+        mock_instance.query = AsyncMock(return_value=mock_result)
+        MockModel.return_value = mock_instance
+        response = client.post("/v1/messages", json=payload)
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers["content-type"]
+
+
+def test_stream_sse_event_sequence(client):
+    """AC-5: SSE body contains valid Anthropic event sequence in correct order"""
+    mock_result = make_mock_result(content="Hello!", input_tokens=8, output_tokens=3)
+    payload = {**VALID_ANTHROPIC_PAYLOAD, "stream": True}
+    with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="gpt-oss:latest"), \
+         patch("conduit.core.model.model_async.ModelAsync") as MockModel:
+        mock_instance = MagicMock()
+        mock_instance.query = AsyncMock(return_value=mock_result)
+        MockModel.return_value = mock_instance
+        response = client.post("/v1/messages", json=payload)
+    events = _parse_sse_events(response.text)
+    event_types = [e["event"] for e in events]
+    assert event_types == [
+        "message_start",
+        "content_block_start",
+        "content_block_delta",
+        "content_block_stop",
+        "message_delta",
+        "message_stop",
+    ]
+
+
+def test_stream_content_block_delta_has_text(client):
+    """AC-5: content_block_delta carries the full response text"""
+    mock_result = make_mock_result(content="Hello!", input_tokens=8, output_tokens=3)
+    payload = {**VALID_ANTHROPIC_PAYLOAD, "stream": True}
+    with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="gpt-oss:latest"), \
+         patch("conduit.core.model.model_async.ModelAsync") as MockModel:
+        mock_instance = MagicMock()
+        mock_instance.query = AsyncMock(return_value=mock_result)
+        MockModel.return_value = mock_instance
+        response = client.post("/v1/messages", json=payload)
+    events = _parse_sse_events(response.text)
+    delta_event = next(e for e in events if e["event"] == "content_block_delta")
+    assert delta_event["data"]["delta"]["text"] == "Hello!"
+
+
+def test_stream_message_delta_has_stop_reason(client):
+    """AC-5: message_delta carries stop_reason=end_turn and output_tokens"""
+    mock_result = make_mock_result(content="Done.", input_tokens=5, output_tokens=2)
+    payload = {**VALID_ANTHROPIC_PAYLOAD, "stream": True}
+    with patch("conduit.core.model.models.modelstore.ModelStore.validate_model", return_value="gpt-oss:latest"), \
+         patch("conduit.core.model.model_async.ModelAsync") as MockModel:
+        mock_instance = MagicMock()
+        mock_instance.query = AsyncMock(return_value=mock_result)
+        MockModel.return_value = mock_instance
+        response = client.post("/v1/messages", json=payload)
+    events = _parse_sse_events(response.text)
+    msg_delta = next(e for e in events if e["event"] == "message_delta")
+    assert msg_delta["data"]["delta"]["stop_reason"] == "end_turn"
+    assert msg_delta["data"]["usage"]["output_tokens"] == 2

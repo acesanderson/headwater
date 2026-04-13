@@ -68,7 +68,12 @@ class ConduitServerAPI:
             return await conduit_openai_service(request)
 
         @self.app.post("/v1/messages")
-        async def conduit_anthropic_messages(request: AnthropicRequest) -> dict:
+        async def conduit_anthropic_messages(request: AnthropicRequest):
+            if request.stream:
+                from headwater_server.services.conduit_service.conduit_anthropic_stream_service import (
+                    conduit_anthropic_stream_service,
+                )
+                return await conduit_anthropic_stream_service(request)
             from headwater_server.services.conduit_service.conduit_anthropic_service import (
                 conduit_anthropic_service,
             )
