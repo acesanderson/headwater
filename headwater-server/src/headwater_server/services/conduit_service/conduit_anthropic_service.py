@@ -8,14 +8,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_STOP_MAP = {
-    "STOP": "end_turn",
-    "LENGTH": "max_tokens",
-    "TOOL_CALLS": "tool_use",
-    "CONTENT_FILTER": "end_turn",
-    "ERROR": "end_turn",
-}
-
 
 async def conduit_anthropic_service(request: AnthropicRequest) -> dict:
     from conduit.core.model.model_async import ModelAsync
@@ -39,6 +31,7 @@ async def conduit_anthropic_service(request: AnthropicRequest) -> dict:
     try:
         model_name = ModelStore.validate_model(request.model)
     except FileNotFoundError as exc:
+        logger.error("Model store unavailable: %s", exc)
         raise HTTPException(status_code=502, detail="Model store unavailable.") from exc
     except ValueError as exc:
         raise HTTPException(
@@ -87,8 +80,27 @@ async def conduit_anthropic_service(request: AnthropicRequest) -> dict:
     result = await model.query(gen_request)
 
     # 5. Build response
+    from conduit.domain.result.response_metadata import StopReason
+
     content_text = str(result.message)
-    stop_reason = _STOP_MAP.get(result.metadata.stop_reason.name, "end_turn")
+    if not content_text and result.metadata.stop_reason != StopReason.LENGTH:
+        logger.error("Model returned empty response: model=%s", model_name)
+        raise HTTPException(status_code=500, detail="Model returned an empty response.")
+
+    _stop_map = {
+        StopReason.STOP: "end_turn",
+        StopReason.LENGTH: "max_tokens",
+        StopReason.TOOL_CALLS: "tool_use",
+        StopReason.CONTENT_FILTER: "end_turn",
+        StopReason.ERROR: "end_turn",
+    }
+    stop_reason = _stop_map.get(result.metadata.stop_reason)
+    if stop_reason is None:
+        logger.warning(
+            "Unknown StopReason '%s', defaulting stop_reason to 'end_turn'",
+            result.metadata.stop_reason,
+        )
+        stop_reason = "end_turn"
 
     logger.info(
         "Anthropic-compat response: model=%s stop_reason=%s input=%d output=%d",
