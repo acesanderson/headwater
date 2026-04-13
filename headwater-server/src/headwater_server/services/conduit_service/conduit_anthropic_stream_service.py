@@ -16,6 +16,10 @@ def _sse(event_type: str, data: dict) -> str:
 
 
 async def _sse_generator(request: AnthropicRequest) -> AsyncGenerator[str, None]:
+    logger.info(
+        "Anthropic-compat stream request: model=%s",
+        request.model,
+    )
     from conduit.core.model.model_async import ModelAsync
     from conduit.core.model.models.modelstore import ModelStore
     from conduit.domain.config.conduit_options import ConduitOptions
@@ -24,7 +28,6 @@ async def _sse_generator(request: AnthropicRequest) -> AsyncGenerator[str, None]
     from conduit.domain.message.message import UserMessage
     from conduit.domain.request.generation_params import GenerationParams
     from conduit.domain.request.request import GenerationRequest
-    from conduit.domain.result.response_metadata import StopReason
     from conduit.utils.progress.verbosity import Verbosity
     from fastapi import HTTPException
 
@@ -76,7 +79,12 @@ async def _sse_generator(request: AnthropicRequest) -> AsyncGenerator[str, None]
     model = ModelAsync(model_name)
     result = await model.query(gen_request)
 
+    from conduit.domain.result.response_metadata import StopReason
+
     content_text = str(result.message)
+    if not content_text and result.metadata.stop_reason != StopReason.LENGTH:
+        logger.error("Model returned empty response: model=%s", model_name)
+        raise HTTPException(status_code=500, detail="Model returned an empty response.")
     _stop_map = {
         StopReason.STOP: "end_turn",
         StopReason.LENGTH: "max_tokens",
