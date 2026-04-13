@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import model_validator
 
 
 __all__ = [
@@ -29,3 +31,9 @@ class AnthropicRequest(BaseModel):
     top_p: float | None = Field(default=None, ge=0.0, le=1.0)
     stop_sequences: list[str] | None = None
     stream: bool = False
+
+    @model_validator(mode="after")
+    def _validate_stream(self) -> AnthropicRequest:
+        if self.stream:
+            raise ValueError("Streaming is not supported on this endpoint.")
+        return self

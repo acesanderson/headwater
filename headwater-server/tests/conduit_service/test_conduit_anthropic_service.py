@@ -110,3 +110,11 @@ def test_anthropic_response_model_echoes_request(client):
         MockModel.return_value = mock_instance
         response = client.post("/v1/messages", json=VALID_ANTHROPIC_PAYLOAD)
     assert response.json()["model"] == VALID_ANTHROPIC_PAYLOAD["model"]
+
+
+def test_stream_true_returns_422(client):
+    """AC-3: stream=true rejected with 422 in Phase 1"""
+    payload = {**VALID_ANTHROPIC_PAYLOAD, "stream": True}
+    response = client.post("/v1/messages", json=payload)
+    assert response.status_code == 422
+    assert "Streaming" in response.text
