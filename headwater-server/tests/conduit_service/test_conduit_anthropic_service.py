@@ -118,3 +118,26 @@ def test_stream_true_returns_422(client):
     response = client.post("/v1/messages", json=payload)
     assert response.status_code == 422
     assert "Streaming" in response.text
+
+
+def test_unknown_model_returns_400(client):
+    """AC-4: unrecognized model -> HTTP 400 with model name in detail"""
+    payload = {**VALID_ANTHROPIC_PAYLOAD, "model": "nonexistent-model-xyz"}
+    with patch(
+        "conduit.core.model.models.modelstore.ModelStore.validate_model",
+        side_effect=ValueError("Model not found"),
+    ):
+        response = client.post("/v1/messages", json=payload)
+    assert response.status_code == 400
+    assert "nonexistent-model-xyz" in response.json()["detail"]
+
+
+def test_model_store_unavailable_returns_502(client):
+    """AC-4: missing model store -> HTTP 502"""
+    with patch(
+        "conduit.core.model.models.modelstore.ModelStore.validate_model",
+        side_effect=FileNotFoundError("aliases.json not found"),
+    ):
+        response = client.post("/v1/messages", json=VALID_ANTHROPIC_PAYLOAD)
+    assert response.status_code == 502
+    assert "unavailable" in response.json()["detail"]
