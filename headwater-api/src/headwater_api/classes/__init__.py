@@ -79,6 +79,13 @@ from headwater_api.classes.conduit_classes.openai_compat import (
     OpenAIChatRequest,
 )
 
+# Anthropic compat
+from headwater_api.classes.conduit_classes.anthropic_compat import (
+    AnthropicContentBlock,
+    AnthropicMessage,
+    AnthropicRequest,
+)
+
 __all__ = [
     # Requests
     "GenerationRequest",
@@ -137,4 +144,8 @@ __all__ = [
     "JsonSchemaFormat",
     "ResponseFormat",
     "OpenAIChatRequest",
+    # Anthropic compat
+    "AnthropicContentBlock",
+    "AnthropicMessage",
+    "AnthropicRequest",
 ]
