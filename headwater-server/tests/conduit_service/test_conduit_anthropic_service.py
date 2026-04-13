@@ -1,6 +1,9 @@
 from __future__ import annotations
 import pytest
-from headwater_api.classes import AnthropicMessage, AnthropicRequest
+from pydantic import ValidationError
+
+from headwater_api.classes import AnthropicMessage
+from headwater_api.classes import AnthropicRequest
 
 
 def test_anthropic_request_minimal():
@@ -33,3 +36,23 @@ def test_anthropic_message_content_as_blocks():
         content=[{"type": "text", "text": "Hello from block"}],
     )
     assert msg.content[0].text == "Hello from block"
+
+
+def test_anthropic_request_rejects_invalid_max_tokens():
+    """AC-1: max_tokens must be >= 1"""
+    with pytest.raises(ValidationError):
+        AnthropicRequest(
+            model="gpt-oss:latest",
+            max_tokens=0,
+            messages=[AnthropicMessage(role="user", content="Hi")],
+        )
+
+
+def test_anthropic_request_rejects_empty_messages():
+    """AC-1: messages must have at least one item"""
+    with pytest.raises(ValidationError):
+        AnthropicRequest(
+            model="gpt-oss:latest",
+            max_tokens=512,
+            messages=[],
+        )
