@@ -8,23 +8,18 @@ COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 JINA_API_KEY = os.getenv("JINA_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Monkey patch Reranker to force truncation at 512 tokens
-_original_init = Reranker.__init__
-
-def _patched_init(self, *args, **kwargs):
-    _original_init(self, *args, **kwargs)
-    # Force tokenizer to truncate to prevent tensor size mismatch errors
-    if hasattr(self, 'tokenizer') and self.tokenizer is not None:
-        self.tokenizer.model_max_length = 512
-
-Reranker.__init__ = _patched_init
-
 # Reranker options
+# NOTE: bge uses max_sequence_length (not max_length) — the LLMLayerWiseRanker param name.
+# LLMLayerWiseRanker._get_inputs appends sep + prompt tokens AFTER prepare_for_model
+# truncates to max_sequence_length, so the final padded sequence exceeds max_sequence_length
+# by (sep + prompt tokens), rounded up to a multiple of 8. XLM-RoBERTa (bge-reranker-large)
+# has max_position_embeddings=514, so total must stay ≤ 512 (largest multiple of 8 ≤ 514).
+# Setting max_sequence_length=450 leaves ~62 tokens of headroom for sep + prompt overhead.
 rankers = {
     "bge": {
         "model_name": "BAAI/bge-reranker-large",
         "model_type": "llm-layerwise",
-        "max_length": 512,
+        "max_sequence_length": 450,
     },
     "mxbai": {
         "model_name": "mixedbread-ai/mxbai-rerank-large-v1",
@@ -60,9 +55,6 @@ def rerank_options(
     for option in options:
         course = option["course_title"]
         TOC = option["course_description"]
-        words = TOC.split()
-        if len(words) > 300:
-            TOC = " ".join(words[:300])
         ranked = ranker.rank(query=query, docs=[TOC])
         # Different models return different objects (RankedResults or Result)
         try:  # See if it's a RankedResults object
@@ -91,9 +83,6 @@ async def rerank_options_async(
     for option in options:
         course = option["course_title"]
         TOC = option["course_description"]
-        words = TOC.split()
-        if len(words) > 300:
-            TOC = " ".join(words[:300])
         ranked = await ranker.rank_async(query=query, docs=[TOC])
         # Different models return different objects (RankedResults or Result)
         try:  # See if it's a RankedResults object
