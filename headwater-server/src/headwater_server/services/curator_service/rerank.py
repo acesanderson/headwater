@@ -61,8 +61,8 @@ def rerank_options(
         course = option["course_title"]
         TOC = option["course_description"]
         words = TOC.split()
-        if len(words) > 400:
-            TOC = " ".join(words[:400])
+        if len(words) > 300:
+            TOC = " ".join(words[:300])
         ranked = ranker.rank(query=query, docs=[TOC])
         # Different models return different objects (RankedResults or Result)
         try:  # See if it's a RankedResults object
@@ -92,8 +92,8 @@ async def rerank_options_async(
         course = option["course_title"]
         TOC = option["course_description"]
         words = TOC.split()
-        if len(words) > 400:
-            TOC = " ".join(words[:400])
+        if len(words) > 300:
+            TOC = " ".join(words[:300])
         ranked = await ranker.rank_async(query=query, docs=[TOC])
         # Different models return different objects (RankedResults or Result)
         try:  # See if it's a RankedResults object
