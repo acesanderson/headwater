@@ -16,6 +16,6 @@ def quick_embedding_service(
         spec = EmbeddingModelStore.get_spec(model)
         prompt = spec.task_map[request.task.value]
 
-    embedding_model = EmbeddingModel(model)
+    embedding_model = EmbeddingModel.get(model)
     embedding = embedding_model.generate_embedding(query, prompt=prompt)
     return QuickEmbeddingResponse(embedding=embedding)
