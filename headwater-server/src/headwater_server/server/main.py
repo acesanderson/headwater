@@ -2,7 +2,7 @@
 Main entry point for the headwater server. Detects the host machine and starts the server with appropriate configuration, for either:
 - Headwater (alphablue)
 - Bywater (caruana)
-- Backwater (cheet)
+- Backwater (botvinnik)
 """
 
 import headwater_server.server.logging_config
@@ -16,7 +16,7 @@ _ = headwater_server.server.logging_config
 hosts = {
     "alphablue": "deepwater",
     "caruana": "bywater",
-    "cheet": "backwater",
+    "botvinnik": "backwater",
 }
 servers = Literal["deepwater", "bywater", "backwater"]
 

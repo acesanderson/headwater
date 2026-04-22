@@ -170,7 +170,7 @@ def _detect_server_name() -> str:
     _host_to_mode = {
         "alphablue": "deepwater",
         "caruana": "bywater",
-        "cheet": "backwater",
+        "botvinnik": "backwater",
     }
     _mode_to_name = {
         "deepwater": "Deepwater API Server",

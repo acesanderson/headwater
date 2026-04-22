@@ -83,47 +83,8 @@ class QuickEmbeddingRequest(BaseModel):
         return self
 
 
-# Collection Operations
-class GetCollectionRequest(BaseModel):
-    collection_name: str = Field(
-        ..., description="The name of the collection to retrieve."
-    )
-
-
-class QueryCollectionRequest(BaseModel):
-    name: str = Field(
-        ...,
-        description="The name of the collection to query.",
-    )
-    query: str | None = Field(
-        ...,
-        description="The query string to search the collection.",
-    )
-    query_embeddings: list[list[float]] | None = Field(
-        ...,
-        description="List of query embeddings to search against the collection.",
-    )
-    k: int = Field(
-        default=10,
-        description="Number of nearest neighbors to retrieve for each query embedding.",
-    )
-    n_results: int = Field(
-        default=10,
-        description="Number of top results to return for each query embedding.",
-    )
-
-    @model_validator(mode="after")
-    def _exactly_one_query(self):
-        has_query = self.query is not None
-        has_query_embeddings = self.query_embeddings is not None
-        if has_query == has_query_embeddings:
-            raise ValueError("Provide exactly one of 'query' or 'query_embeddings'.")
-        return self
-
-
 __all__ = [
     "ChromaBatch",
     "EmbeddingsRequest",
     "QuickEmbeddingRequest",
-    "QueryCollectionRequest",
 ]

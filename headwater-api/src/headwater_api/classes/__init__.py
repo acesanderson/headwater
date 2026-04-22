@@ -8,8 +8,6 @@ from headwater_api.classes.embeddings_classes.requests import (
     ChromaBatch,
     EmbeddingsRequest,
     QuickEmbeddingRequest,
-    GetCollectionRequest,
-    QueryCollectionRequest,
 )
 from headwater_api.classes.curator_classes.requests import (
     CuratorRequest,
@@ -24,10 +22,6 @@ from headwater_api.classes.conduit_classes.responses import (
 from headwater_api.classes.embeddings_classes.responses import (
     EmbeddingsResponse,
     QuickEmbeddingResponse,
-    CollectionRecord,
-    ListCollectionsResponse,
-    QueryCollectionResponse,
-    QueryCollectionResult,
 )
 
 from headwater_api.classes.curator_classes.responses import (
@@ -94,9 +88,6 @@ __all__ = [
     "CuratorRequest",
     "ChromaBatch",
     "EmbeddingsRequest",
-    "CollectionRecord",
-    "GetCollectionRequest",
-    "QueryCollectionRequest",
     "QuickEmbeddingRequest",
     # Responses
     "GenerationResponse",
@@ -106,10 +97,6 @@ __all__ = [
     "CuratorResult",
     "EmbeddingsResponse",
     "QuickEmbeddingResponse",
-    "ListCollectionsResponse",
-    "CollectionRecord",
-    "QueryCollectionResult",
-    "QueryCollectionResponse",
     # Server
     "HeadwaterServerError",
     "HeadwaterServerException",

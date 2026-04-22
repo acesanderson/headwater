@@ -6,11 +6,6 @@ from headwater_api.classes import (
     EmbeddingModelSpec,
     QuickEmbeddingRequest,
     QuickEmbeddingResponse,
-    GetCollectionRequest,
-    CollectionRecord,
-    ListCollectionsResponse,
-    QueryCollectionRequest,
-    QueryCollectionResponse,
 )
 
 
@@ -53,36 +48,5 @@ class EmbeddingsServerAPI:
 
             return quick_embedding_service(request)
 
-        # Get Collection
-        @self.app.post(
-            "/conduit/embeddings/collections/get",
-            response_model=CollectionRecord,
-        )
-        async def get_collection(request: GetCollectionRequest) -> CollectionRecord:
-            from headwater_server.services.embeddings_service.get_collection_service import (
-                get_collection_service,
-            )
 
-            return await get_collection_service(request)
-
-        @self.app.get("/conduit/embeddings/collections")
-        async def list_collections() -> ListCollectionsResponse:
-            from headwater_server.services.embeddings_service.list_collections_service import (
-                list_collections_service,
-            )
-
-            return await list_collections_service()
-
-        @self.app.post(
-            "/conduit/embeddings/collections/query",
-            response_model=QueryCollectionResponse,
-        )
-        async def query_collection(
-            request: QueryCollectionRequest,
-        ) -> QueryCollectionResponse:
-            from headwater_server.services.embeddings_service.query_collection_service import (
-                query_collection_service,
-            )
-
-            return await query_collection_service(request)
 
