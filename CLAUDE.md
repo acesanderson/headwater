@@ -9,6 +9,7 @@ Headwater is a FastAPI routing gateway + subserver stack running on two Linux ho
 | `headwaterrouter` | caruana | 8081 | `"headwater"` (default) |
 | `bywater` | caruana | 8080 | `"bywater"` |
 | `deepwater` | alphablue | 8080 | `"deepwater"` |
+| `backwater` | botvinnik | 8080 | `"backwater"` |
 
 Default `HeadwaterClient()` hits the **router** (8081). Target subservers directly with `host_alias`.
 
@@ -37,9 +38,32 @@ bywater = HeadwaterClient(host_alias="bywater")
 
 router.ping()               # True/False
 router.get_status()         # uptime, server name, version
-router.get_logs_last(n=20)  # last N log records from ring buffer
+router.get_logs_last(n=20)  # last N in-process log records (ring buffer — resets on restart)
 router.get_routes()         # parsed routes.yaml: backends, routes, heavy_models
 bywater.get_logs_last(n=20) # drill into subserver logs
+```
+
+**Log endpoints — two options per service:**
+
+| Endpoint | Source | Survives restart? |
+|---|---|---|
+| `GET /logs/last?n=N` | in-memory ring buffer (last 500 records) | No — resets on restart |
+| `GET /logs/journal?n=N` | `journalctl` for that unit | Yes — full systemd history |
+
+`/logs/journal` is the go-to for crash diagnostics. Quick curl examples:
+
+```bash
+# headwaterrouter (caruana :8081)
+curl "http://172.16.0.4:8081/logs/journal?n=50"
+
+# bywater (caruana :8080)
+curl "http://172.16.0.4:8080/logs/journal?n=50"
+
+# deepwater (alphablue :8080)
+curl "http://172.16.0.2:8080/logs/journal?n=50"
+
+# backwater (botvinnik :8080)
+curl "http://172.16.0.3:8080/logs/journal?n=50"
 ```
 
 ---
