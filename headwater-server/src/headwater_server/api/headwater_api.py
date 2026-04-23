@@ -59,7 +59,7 @@ class HeadwaterServerAPI:
             import subprocess
             try:
                 result = subprocess.run(
-                    ["journalctl", "-u", unit, "-n", str(n), "--no-pager"],
+                    ["/usr/bin/journalctl", "-u", unit, "-n", str(n), "--no-pager"],
                     capture_output=True,
                     text=True,
                     timeout=10,

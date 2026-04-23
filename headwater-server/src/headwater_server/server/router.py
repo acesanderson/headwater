@@ -77,7 +77,7 @@ class HeadwaterRouter:
             import subprocess
             try:
                 result = subprocess.run(
-                    ["journalctl", "-u", "headwaterrouter", "-n", str(n), "--no-pager"],
+                    ["/usr/bin/journalctl", "-u", "headwaterrouter", "-n", str(n), "--no-pager"],
                     capture_output=True,
                     text=True,
                     timeout=10,
