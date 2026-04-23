@@ -20,6 +20,7 @@ from headwater_api.classes import StatusResponse, LogsLastResponse, GpuResponse,
 from headwater_server.server.routing_config import (
     RouterConfig,
     RoutingError,
+    get_fallback_urls,
     load_router_config,
     ROUTES_YAML_PATH,
 )
@@ -136,10 +137,6 @@ class HeadwaterRouter:
                 )
                 return JSONResponse(status_code=400, content=error.model_dump(mode="json"))
 
-            target = f"{backend_url}/{path}"
-            if request.url.query:
-                target = f"{target}?{request.url.query}"
-
             forward_headers = {
                 k: v for k, v in request.headers.items()
                 if k.lower() not in HOP_BY_HOP
@@ -157,53 +154,72 @@ class HeadwaterRouter:
                 },
             )
 
-            try:
-                async with httpx.AsyncClient() as client:
-                    upstream = await client.request(
-                        method=request.method,
-                        url=target,
-                        headers=forward_headers,
-                        content=body,
-                        timeout=300.0,
+            backends_to_try = [backend_url] + get_fallback_urls(route_key, config)
+            upstream = None
+            for attempt_url in backends_to_try:
+                attempt_target = f"{attempt_url}/{path}"
+                if request.url.query:
+                    attempt_target = f"{attempt_target}?{request.url.query}"
+                try:
+                    async with httpx.AsyncClient() as client:
+                        upstream = await client.request(
+                            method=request.method,
+                            url=attempt_target,
+                            headers=forward_headers,
+                            content=body,
+                            timeout=httpx.Timeout(connect=5.0, read=300.0),
+                        )
+                    backend_url = attempt_url
+                    break
+                except httpx.ConnectError as exc:
+                    logger.warning(
+                        "backend_unavailable",
+                        extra={
+                            "backend": attempt_url,
+                            "path": path,
+                            "error": str(exc),
+                            "req_id": request.state.request_id,
+                            "will_retry": attempt_url != backends_to_try[-1],
+                        },
                     )
-            except httpx.ConnectError as exc:
+                except httpx.TimeoutException as exc:
+                    logger.error(
+                        "backend_timeout",
+                        extra={
+                            "backend": attempt_url,
+                            "path": path,
+                            "error": str(exc),
+                            "req_id": request.state.request_id,
+                        },
+                    )
+                    error = HeadwaterServerError(
+                        error_type=ErrorType.BACKEND_TIMEOUT,
+                        message=f"Backend timed out after 300s: {attempt_url}",
+                        status_code=503,
+                        path=request.url.path,
+                        method=request.method,
+                        request_id=request.state.request_id,
+                        context={"backend": attempt_url},
+                    )
+                    return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
+
+            if upstream is None:
                 logger.error(
-                    "backend_unavailable",
+                    "all_backends_unavailable",
                     extra={
-                        "backend": backend_url,
+                        "backends_tried": backends_to_try,
                         "path": path,
-                        "error": str(exc),
                         "req_id": request.state.request_id,
                     },
                 )
                 error = HeadwaterServerError(
                     error_type=ErrorType.BACKEND_UNAVAILABLE,
-                    message=f"Backend unreachable: {backend_url}",
+                    message=f"All backends unreachable for route '{route_key}': {backends_to_try}",
                     status_code=503,
                     path=request.url.path,
                     method=request.method,
                     request_id=request.state.request_id,
-                    context={"backend": backend_url},
-                )
-                return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
-            except httpx.TimeoutException as exc:
-                logger.error(
-                    "backend_timeout",
-                    extra={
-                        "backend": backend_url,
-                        "path": path,
-                        "error": str(exc),
-                        "req_id": request.state.request_id,
-                    },
-                )
-                error = HeadwaterServerError(
-                    error_type=ErrorType.BACKEND_TIMEOUT,
-                    message=f"Backend timed out after 300s: {backend_url}",
-                    status_code=503,
-                    path=request.url.path,
-                    method=request.method,
-                    request_id=request.state.request_id,
-                    context={"backend": backend_url},
+                    context={"backends_tried": backends_to_try},
                 )
                 return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
 
@@ -222,6 +238,10 @@ class HeadwaterRouter:
                 k: v for k, v in upstream.headers.items()
                 if k.lower() not in HOP_BY_HOP
             }
+            if backend_url != backends_to_try[0]:
+                url_to_name = {v: k for k, v in config.backends.items()}
+                response_headers["X-Headwater-Routed-Via"] = url_to_name.get(backend_url, backend_url)
+                response_headers["X-Headwater-Primary-Backend"] = url_to_name.get(backends_to_try[0], backends_to_try[0])
             return Response(
                 content=upstream.content,
                 status_code=upstream.status_code,

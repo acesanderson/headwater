@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -24,9 +24,10 @@ class RoutingError(ValueError):
 
 @dataclass(frozen=True)
 class RouterConfig:
-    backends: dict[str, str]   # backend name -> base_url
-    routes: dict[str, str]     # service name -> backend name
-    heavy_models: list[str]    # model names that trigger heavy routing
+    backends: dict[str, str]              # backend name -> base_url
+    routes: dict[str, str]                # service name -> backend name
+    heavy_models: list[str]               # model names that trigger heavy routing
+    fallbacks: dict[str, list[str]] = field(default_factory=dict)  # route_key -> [backend_name, ...]
 
 
 def load_router_config(path: Path = ROUTES_YAML_PATH) -> RouterConfig:
@@ -61,10 +62,20 @@ def load_router_config(path: Path = ROUTES_YAML_PATH) -> RouterConfig:
                 f"Defined backends: {sorted(backends.keys())}"
             )
 
+    raw_fallbacks: dict[str, list[str]] = raw.get("fallbacks") or {}
+    for route_key, fallback_names in raw_fallbacks.items():
+        for fb_name in fallback_names:
+            if fb_name not in backends:
+                raise RoutingConfigError(
+                    f"Fallback '{fb_name}' for route '{route_key}' references undefined backend. "
+                    f"Defined backends: {sorted(backends.keys())}"
+                )
+
     return RouterConfig(
         backends=backends,
         routes=routes,
         heavy_models=heavy_models,
+        fallbacks=raw_fallbacks,
     )
 
 
@@ -101,3 +112,12 @@ def resolve_backend(service: str, model: str | None, config: RouterConfig) -> tu
     route_key = service
     backend_name = config.routes[service]
     return config.backends[backend_name], route_key
+
+
+def get_fallback_urls(route_key: str, config: RouterConfig) -> list[str]:
+    """Return ordered list of fallback backend base URLs for the given route key."""
+    return [
+        config.backends[name]
+        for name in config.fallbacks.get(route_key, [])
+        if name in config.backends
+    ]

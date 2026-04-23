@@ -140,6 +140,11 @@ class HeadwaterTransport:
                 # This should raise an exception (e.g., HTTPError or custom)
                 self._handle_error_response(response)
 
+            # Warn if the router fell back to a secondary backend
+            if routed_via := response.headers.get("X-Headwater-Routed-Via"):
+                primary = response.headers.get("X-Headwater-Primary-Backend", "primary")
+                logger.warning(f"Request routed via fallback backend '{routed_via}' ('{primary}' was unavailable)")
+
             # Return the raw response text (which should be JSON)
             return response.text
 
