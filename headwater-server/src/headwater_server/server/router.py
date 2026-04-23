@@ -167,7 +167,7 @@ class HeadwaterRouter:
                             url=attempt_target,
                             headers=forward_headers,
                             content=body,
-                            timeout=httpx.Timeout(connect=5.0, read=300.0),
+                            timeout=httpx.Timeout(300.0, connect=5.0),
                         )
                     backend_url = attempt_url
                     break

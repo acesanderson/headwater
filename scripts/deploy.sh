@@ -2,12 +2,13 @@
 # Deploy headwater code changes to remote servers.
 #
 # Usage:
-#   ./scripts/deploy.sh [--sync-deps] [caruana|alphablue|all]
+#   ./scripts/deploy.sh [--sync-deps] [caruana|alphablue|botvinnik|all]
 #
 # Targets:
 #   caruana   — headwaterrouter (8081) + bywater (8080)
 #   alphablue — deepwater (8080)
-#   all       — both (default)
+#   botvinnik — backwater (8080)
+#   all       — all three (default)
 #
 # --sync-deps: run `uv sync` on the remote after pulling (needed when
 #              pyproject.toml or uv.lock changed; skipped by default)
@@ -20,6 +21,7 @@ SERVER_SUBDIR="headwater-server"
 declare -A REMOTE_REPO=(
     [caruana]="/home/bianders/Brian_Code/headwater"
     [alphablue]="/home/fishhouses/Brian_Code/headwater"
+    [botvinnik]="/home/fishhouses/Brian_Code/headwater"
 )
 
 # --- parse args ---
@@ -29,7 +31,7 @@ TARGET="all"
 for arg in "$@"; do
     case "$arg" in
         --sync-deps) SYNC_DEPS=1 ;;
-        caruana|alphablue|all) TARGET="$arg" ;;
+        caruana|alphablue|botvinnik|all) TARGET="$arg" ;;
         *) echo "Unknown argument: $arg"; exit 1 ;;
     esac
 done
@@ -88,9 +90,13 @@ case "$TARGET" in
     alphablue)
         remote_deploy alphablue deepwater
         ;;
+    botvinnik)
+        remote_deploy botvinnik backwater
+        ;;
     all)
         remote_deploy caruana headwaterrouter bywater
         remote_deploy alphablue deepwater
+        remote_deploy botvinnik backwater
         ;;
 esac
 
