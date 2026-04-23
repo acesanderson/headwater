@@ -52,6 +52,25 @@ class HeadwaterServerAPI:
             from headwater_server.server.logging_config import ring_buffer
             return ring_buffer.get_response(n)
 
+        unit = server_name.split()[0].lower()  # "Bywater API Server" -> "bywater"
+
+        @self.app.get("/logs/journal")
+        def logs_journal(n: int = Query(default=100, ge=1)):
+            import subprocess
+            try:
+                result = subprocess.run(
+                    ["journalctl", "-u", unit, "-n", str(n), "--no-pager"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                lines = result.stdout.splitlines()
+                return {"unit": unit, "n_requested": n, "lines": lines}
+            except FileNotFoundError:
+                return {"unit": unit, "n_requested": n, "lines": [], "error": "journalctl not available"}
+            except subprocess.TimeoutExpired:
+                return {"unit": unit, "n_requested": n, "lines": [], "error": "journalctl timed out"}
+
         @self.app.get("/sysinfo")
         async def sysinfo():
             from headwater_server.services.status_service.sysinfo_service import get_sysinfo_service

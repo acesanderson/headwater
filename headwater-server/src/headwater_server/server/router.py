@@ -72,6 +72,23 @@ class HeadwaterRouter:
             from headwater_server.server.logging_config import ring_buffer
             return ring_buffer.get_response(n)
 
+        @self.app.get("/logs/journal")
+        def logs_journal(n: int = Query(default=100, ge=1)) -> dict:
+            import subprocess
+            try:
+                result = subprocess.run(
+                    ["journalctl", "-u", "headwaterrouter", "-n", str(n), "--no-pager"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                lines = result.stdout.splitlines()
+                return {"unit": "headwaterrouter", "n_requested": n, "lines": lines}
+            except FileNotFoundError:
+                return {"unit": "headwaterrouter", "n_requested": n, "lines": [], "error": "journalctl not available"}
+            except subprocess.TimeoutExpired:
+                return {"unit": "headwaterrouter", "n_requested": n, "lines": [], "error": "journalctl timed out"}
+
         @self.app.get("/status", response_model=StatusResponse)
         async def status() -> StatusResponse:
             from headwater_server.services.status_service.get_status import get_status_service
