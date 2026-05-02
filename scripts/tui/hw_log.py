@@ -57,6 +57,13 @@ ORANGE = "#ce9178"
 YELLOW = "#dcdcaa"
 MUTED  = "#808080"
 
+HOST_COLORS = {
+    "caruana":   YELLOW,      # bywater  — matches logo.py \033[33m
+    "alphablue": "#569cd6",   # deepwater — matches logo.py \033[34m
+    "botvinnik": GREEN,       # backwater — matches logo.py \033[92m
+    "lasker":    MUTED,
+}
+
 LOGO_LINES = [
     "    ██╗  ██╗███████╗ █████╗ ██████╗ ██╗    ██╗ █████╗ ████████╗███████╗██████╗ ",
     "    ██║  ██║██╔════╝██╔══██╗██╔══██╗██║    ██║██╔══██╗╚══██╔══╝██╔════╝██╔══██╗",
@@ -66,7 +73,7 @@ LOGO_LINES = [
     "    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝",
 ]
 
-COL_WIDTHS = {"TIME": 8, "CNT": 5, "METH": 5, "PATH": 26, "VIA": 16, "BACKEND": 20, "MODEL": 22, "ST": 4, "DUR": 7}
+COL_WIDTHS = {"TIME": 8, "CNT": 5, "METH": 5, "PATH": 24, "VIA": 16, "BACKEND": 22, "MODEL": 22, "ST": 4, "DUR": 7}
 
 # ── Pure helpers ───────────────────────────────────────────────────────────────
 
@@ -258,7 +265,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
     table.add_column("METH",         style=GREEN,   width=COL_WIDTHS["METH"],    no_wrap=True)
     table.add_column("SERVICE/PATH", style=YELLOW,  width=COL_WIDTHS["PATH"],    no_wrap=True)
     table.add_column("VIA",                         width=COL_WIDTHS["VIA"],     no_wrap=True)
-    table.add_column("BACKEND",      style=BLUE,    width=COL_WIDTHS["BACKEND"], no_wrap=True)
+    table.add_column("BACKEND",                     width=COL_WIDTHS["BACKEND"], no_wrap=True)
     table.add_column("MODEL",        style=ORANGE,  width=COL_WIDTHS["MODEL"],   no_wrap=True)
     table.add_column("ST",                          width=COL_WIDTHS["ST"],      no_wrap=True)
     table.add_column("DUR",          style=MUTED,   width=COL_WIDTHS["DUR"],     no_wrap=True)
@@ -272,7 +279,8 @@ def build_log_table(rows: list[PendingRow]) -> Table:
         sc = status_color(row.upstream_status)
         ip = row.backend.split("//")[-1].split(":")[0]
         host = IP_TO_HOST.get(ip, ip)
-        backend_str = truncate(f"{host} ({ip})", COL_WIDTHS["BACKEND"])
+        hc = HOST_COLORS.get(host, BLUE)
+        backend_cell = f"[{hc}]{host}[/{hc}] [{BLUE}]({ip})[/{BLUE}]"
 
         table.add_row(
             ts,
@@ -280,7 +288,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
             row.method or "—",
             truncate(row.path, COL_WIDTHS["PATH"]),
             f"[{vc}]{via_str}[/{vc}]",
-            backend_str,
+            backend_cell,
             truncate((row.model.split("/")[-1] if row.model else "—"), COL_WIDTHS["MODEL"]),
             f"[{sc}]{st_str}[/{sc}]",
             format_duration(row.duration_ms),
