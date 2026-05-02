@@ -30,6 +30,12 @@ ORANGE = "#ce9178"
 MUTED  = "#ffffff"
 DIM    = "#555555"
 
+SERVER_COLORS = {
+    "bywater":   "#dcdcaa",  # yellow  — matches logo.py \033[33m
+    "deepwater": "#569cd6",  # blue    — matches logo.py \033[34m
+    "backwater": "#4ec9b0",  # green   — matches logo.py \033[92m
+}
+
 _GPU_THRESHOLDS  = (60, 85)
 _VRAM_THRESHOLDS = (70, 90)
 _CPU_THRESHOLDS  = (60, 80)
@@ -139,9 +145,10 @@ def build_backend_panel(
     temp_str = f"{temp_c}C" if temp_c is not None else "—"
     uptime_str = format_uptime(uptime_s) if uptime_s is not None else "—"
 
-    t.append(f"{name.upper()}\n", style="bold white")
+    sc = SERVER_COLORS.get(name, BLUE)
+    t.append(f"{name}  ", style=f"bold {sc}")
     t.append("* ", style=f"bold {tc}")
-    t.append(f"{temp_str}  ", style=tc)
+    t.append(f"{temp_str}\n", style=tc)
     t.append(f"{hostname} · {gpu_name} · up {uptime_str}\n", style=MUTED)
     t.append("\n")
 
@@ -186,7 +193,8 @@ def build_backend_panel(
     else:
         t.append("  no models loaded\n", style=MUTED)
 
-    return Panel(t, title=f"[{BLUE}]{name}[/{BLUE}]", border_style="white", box=rich.box.ROUNDED)
+    sc = SERVER_COLORS.get(name, BLUE)
+    return Panel(t, title=f"[bold {sc}]{name}[/bold {sc}]", border_style=sc, box=rich.box.ROUNDED)
 
 
 def build_router_status_bar(router_up: bool, backend_count: int, total_backends: int, last_poll_s: float | None) -> Text:
