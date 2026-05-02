@@ -306,10 +306,13 @@ def main() -> None:
                     offline=False,
                 ))
 
+            # 2x2 grid: top row filled, bottom-left filled, bottom-right empty
+            padded = panels + [""] * (4 - len(panels))
             grid = Table.grid(expand=True, padding=0)
-            for _ in panels:
-                grid.add_column(ratio=1)
-            grid.add_row(*panels)
+            grid.add_column(ratio=1)
+            grid.add_column(ratio=1)
+            grid.add_row(padded[0], padded[1])
+            grid.add_row(padded[2], padded[3])
             status_bar = build_router_status_bar(router_up, sum(1 for p in panels if True), len(backends), last_successful_poll)
             from rich.console import Group
             live.update(Group(grid, status_bar))
