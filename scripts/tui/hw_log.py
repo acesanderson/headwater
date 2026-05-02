@@ -24,6 +24,12 @@ SUBSERVER_URLS = {
     "deepwater":  "http://172.16.0.2:8080",
     "backwater":  "http://172.16.0.3:8080",
 }
+IP_TO_HOST = {
+    "172.16.0.4": "caruana",
+    "172.16.0.2": "alphablue",
+    "172.16.0.3": "botvinnik",
+    "172.16.0.11": "lasker",
+}
 POLL_INTERVAL = 1.0
 HEADER_HEIGHT = 9  # 6 logo lines + 1 status + 1 col header + 1 panel border
 MAX_PENDING_CYCLES = 3
@@ -52,7 +58,7 @@ LOGO_LINES = [
     "    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝",
 ]
 
-COL_WIDTHS = {"TIME": 8, "METH": 5, "PATH": 28, "VIA": 18, "BACKEND": 12, "MODEL": 16, "ST": 4, "DUR": 7}
+COL_WIDTHS = {"TIME": 8, "METH": 5, "PATH": 28, "VIA": 18, "BACKEND": 22, "MODEL": 16, "ST": 4, "DUR": 7}
 
 # ── Pure helpers ───────────────────────────────────────────────────────────────
 
@@ -231,14 +237,16 @@ def build_log_table(rows: list[PendingRow]) -> Table:
         vc = via_color(row.route)
         st_str = str(row.upstream_status) if row.upstream_status is not None else "—"
         sc = status_color(row.upstream_status)
-        backend_short = row.backend.split("//")[-1].split(":")[0]
+        ip = row.backend.split("//")[-1].split(":")[0]
+        host = IP_TO_HOST.get(ip, ip)
+        backend_str = truncate(f"{host} ({ip})", COL_WIDTHS["BACKEND"])
 
         table.add_row(
             ts,
             row.method or "—",
             truncate(row.path, COL_WIDTHS["PATH"]),
             f"[{vc}]{via_str}[/{vc}]",
-            f"→ {backend_short}",
+            backend_str,
             truncate(row.model or "—", COL_WIDTHS["MODEL"]),
             f"[{sc}]{st_str}[/{sc}]",
             format_duration(row.duration_ms),
