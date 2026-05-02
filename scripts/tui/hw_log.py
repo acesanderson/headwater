@@ -158,7 +158,7 @@ def process_entries(
         extra = entry.get("extra") or {}
 
         if msg == "proxy_request" and req_id and req_id not in seen and req_id not in pending:
-            path = extra.get("path", "")
+            path = "/" + extra.get("path", "").lstrip("/")
             if is_internal_path(path):
                 continue
             pending[req_id] = PendingRow(
@@ -217,7 +217,7 @@ def process_subserver_entries(
         if req_id and req_id in seen:
             continue
         extra = entry.get("extra") or {}
-        path = extra.get("path", "")
+        path = "/" + extra.get("path", "").lstrip("/")
         if is_internal_path(path):
             continue
         completed.append(PendingRow(
@@ -320,7 +320,7 @@ def count_healthy_backends(backend_urls: list[str]) -> int:
     count = 0
     for url in backend_urls:
         try:
-            r = httpx.get(f"{url}/ping", timeout=1.0)
+            r = httpx.get(f"{url}/ping", timeout=2.0)
             if r.status_code == 200:
                 count += 1
         except Exception:
