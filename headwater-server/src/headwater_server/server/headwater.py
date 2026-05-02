@@ -133,15 +133,16 @@ class HeadwaterServer:
                 status_code = 500
             finally:
                 duration_ms = round((time.monotonic() - start) * 1000, 1)
-                logger.debug(
-                    "request_finished",
-                    extra={
-                        "path": request.url.path,
-                        "method": request.method,
-                        "status_code": status_code,
-                        "duration_ms": duration_ms,
-                    },
-                )
+                extra: dict = {
+                    "path": request.url.path,
+                    "method": request.method,
+                    "status_code": status_code,
+                    "duration_ms": duration_ms,
+                }
+                model = getattr(request.state, "model", None)
+                if model is not None:
+                    extra["model"] = model
+                logger.debug("request_finished", extra=extra)
                 request_id_var.reset(token)
 
             if response is not None:

@@ -21,20 +21,29 @@ def test_status_color_none():
     assert hw_log.status_color(None) == hw_log.MUTED
 
 
-def test_route_color_standard():
-    assert hw_log.route_color("conduit") == "#c586c0"
-    assert hw_log.route_color("siphon") == "#c586c0"
-    assert hw_log.route_color("embeddings") == "#c586c0"
+def test_via_color_standard():
+    assert hw_log.via_color("conduit") == "#c586c0"
+    assert hw_log.via_color("siphon") == "#c586c0"
+    assert hw_log.via_color("embeddings") == "#c586c0"
 
 
-def test_route_color_special():
-    assert hw_log.route_color("heavy_inference") == "#e8c07d"
-    assert hw_log.route_color("ambient_inference") == "#e8c07d"
-    assert hw_log.route_color("reranker_heavy") == "#e8c07d"
+def test_via_color_special():
+    assert hw_log.via_color("heavy_inference") == "#e8c07d"
+    assert hw_log.via_color("ambient_inference") == "#e8c07d"
+    assert hw_log.via_color("reranker_heavy") == "#e8c07d"
 
 
-def test_route_color_none():
-    assert hw_log.route_color(None) == "#c586c0"
+def test_via_color_none_is_muted():
+    assert hw_log.via_color(None) == hw_log.MUTED
+
+
+def test_via_text_routed():
+    assert hw_log.via_text("conduit") == "conduit"
+    assert hw_log.via_text("heavy_inference") == "heavy_inference"
+
+
+def test_via_text_direct():
+    assert hw_log.via_text(None) == "direct"
 
 
 def test_truncate_short_string():

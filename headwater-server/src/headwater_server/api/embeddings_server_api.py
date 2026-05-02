@@ -1,5 +1,5 @@
 from __future__ import annotations
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from headwater_api.classes import (
     EmbeddingsRequest,
     EmbeddingsResponse,
@@ -20,12 +20,11 @@ class EmbeddingsServerAPI:
 
         # Embeddings
         @self.app.post("/conduit/embeddings", response_model=EmbeddingsResponse)
-        async def generate_embeddings(request: EmbeddingsRequest):
-            """Generate synthetic data with structured error handling"""
+        async def generate_embeddings(http_request: Request, request: EmbeddingsRequest):
             from headwater_server.services.embeddings_service.generate_embeddings_service import (
                 generate_embeddings_service,
             )
-
+            http_request.state.model = request.model
             return await generate_embeddings_service(request)
 
         @self.app.get("/conduit/embeddings/models", response_model=list[EmbeddingModelSpec])
@@ -40,12 +39,13 @@ class EmbeddingsServerAPI:
             "/conduit/embeddings/quick", response_model=QuickEmbeddingResponse
         )
         async def quick_embedding(
+            http_request: Request,
             request: QuickEmbeddingRequest,
         ) -> QuickEmbeddingResponse:
             from headwater_server.services.embeddings_service.quick_embedding_service import (
                 quick_embedding_service,
             )
-
+            http_request.state.model = request.model
             return quick_embedding_service(request)
 
 

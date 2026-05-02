@@ -52,7 +52,7 @@ LOGO_LINES = [
     "    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝",
 ]
 
-COL_WIDTHS = {"TIME": 8, "METH": 5, "PATH": 28, "ROUTE": 18, "BACKEND": 12, "MODEL": 16, "ST": 4, "DUR": 7}
+COL_WIDTHS = {"TIME": 8, "METH": 5, "PATH": 28, "VIA": 18, "BACKEND": 12, "MODEL": 16, "ST": 4, "DUR": 7}
 
 # ── Pure helpers ───────────────────────────────────────────────────────────────
 
@@ -79,7 +79,13 @@ def status_color(code: int | None) -> str:
     return "#888888"
 
 
-def route_color(route_key: str | None) -> str:
+def via_text(route_key: str | None) -> str:
+    return route_key if route_key is not None else "direct"
+
+
+def via_color(route_key: str | None) -> str:
+    if route_key is None:
+        return MUTED
     if route_key in SPECIAL_ROUTES:
         return AMBER
     return PURPLE
@@ -190,7 +196,7 @@ def process_subserver_entries(
             path=path,
             service=path.lstrip("/").split("/")[0],
             backend=backend_url,
-            model=None,
+            model=extra.get("model"),
             route=None,
             upstream_status=extra.get("status_code"),
             method=extra.get("method"),
@@ -213,7 +219,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
     table.add_column("TIME",         style=MUTED,   width=COL_WIDTHS["TIME"],    no_wrap=True)
     table.add_column("METH",         style=GREEN,   width=COL_WIDTHS["METH"],    no_wrap=True)
     table.add_column("SERVICE/PATH", style=YELLOW,  width=COL_WIDTHS["PATH"],    no_wrap=True)
-    table.add_column("ROUTE",                       width=COL_WIDTHS["ROUTE"],   no_wrap=True)
+    table.add_column("VIA",                         width=COL_WIDTHS["VIA"],     no_wrap=True)
     table.add_column("BACKEND",      style=BLUE,    width=COL_WIDTHS["BACKEND"], no_wrap=True)
     table.add_column("MODEL",        style=ORANGE,  width=COL_WIDTHS["MODEL"],   no_wrap=True)
     table.add_column("ST",                          width=COL_WIDTHS["ST"],      no_wrap=True)
@@ -221,8 +227,8 @@ def build_log_table(rows: list[PendingRow]) -> Table:
 
     for row in rows:
         ts = datetime.fromtimestamp(row.timestamp).strftime("%H:%M:%S")
-        route_str = truncate(row.route or "—", COL_WIDTHS["ROUTE"])
-        rc = route_color(row.route)
+        via_str = truncate(via_text(row.route), COL_WIDTHS["VIA"])
+        vc = via_color(row.route)
         st_str = str(row.upstream_status) if row.upstream_status is not None else "—"
         sc = status_color(row.upstream_status)
         backend_short = row.backend.split("//")[-1].split(":")[0]
@@ -231,7 +237,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
             ts,
             row.method or "—",
             truncate(row.path, COL_WIDTHS["PATH"]),
-            f"[{rc}]{route_str}[/{rc}]",
+            f"[{vc}]{via_str}[/{vc}]",
             f"→ {backend_short}",
             truncate(row.model or "—", COL_WIDTHS["MODEL"]),
             f"[{sc}]{st_str}[/{sc}]",
