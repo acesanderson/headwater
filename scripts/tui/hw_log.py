@@ -352,7 +352,7 @@ def _fire_blast(blast_state: dict) -> None:
     uv = shutil.which("uv") or "uv"
     blast_state["ts"] = time.time()
     subprocess.Popen(
-        [uv, "run", str(_BLAST_SCRIPT), "--n", "30", "--delay", "0.3"],
+        [uv, "run", "--script", str(_BLAST_SCRIPT), "--n", "30", "--delay", "0.3"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
