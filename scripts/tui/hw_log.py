@@ -233,11 +233,28 @@ def build_header(console: Console, router_status: str, backend_count: int, last_
     return Panel(combined, style="on #0a0a0a", border_style="#1a1a1a")
 
 
+BACKEND_CHECK_INTERVAL = 10  # polls between backend health checks
+
+
+def count_healthy_backends(backend_urls: list[str]) -> int:
+    count = 0
+    for url in backend_urls:
+        try:
+            r = httpx.get(f"{url}/ping", timeout=1.0)
+            if r.status_code == 200:
+                count += 1
+        except Exception:
+            pass
+    return count
+
+
 def main() -> None:
     console = Console()
     router_status = "UNREACHABLE"
     backend_count = 0
     last_successful_poll: float | None = None
+    backend_urls: list[str] = []
+    poll_tick = 0
 
     pending: dict[str, PendingRow] = {}
     seen: set[str] = set()
@@ -256,11 +273,15 @@ def main() -> None:
                 router_status = "up"
                 last_successful_poll = time.time()
 
-                try:
-                    s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
-                    backend_count = len(s.json().get("backends", {}))
-                except Exception:
-                    pass
+                # Refresh backend URL list every 10 polls, then ping each
+                if poll_tick % BACKEND_CHECK_INTERVAL == 0:
+                    try:
+                        s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
+                        backend_urls = list(s.json().get("backends", {}).values())
+                    except Exception:
+                        pass
+                    backend_count = count_healthy_backends(backend_urls)
+                poll_tick += 1
 
                 entries = data.get("entries", [])
                 new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts]
