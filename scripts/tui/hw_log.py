@@ -332,7 +332,7 @@ def build_header(console: Console, router_status: str, backend_count: int, last_
 
     combined = Text()
     combined.append_text(logo_text)
-    combined.append("\n")
+    combined.append("\n\n")
     combined.append_text(status_line)
 
     return Panel(combined, style="on #0a0a0a", border_style="#1a1a1a")
