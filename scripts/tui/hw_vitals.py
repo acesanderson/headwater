@@ -8,9 +8,9 @@ import time
 
 import httpx
 import rich.box
+from rich.columns import Columns
 from rich.console import Console
 from rich.live import Live
-from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
 
@@ -178,7 +178,7 @@ def build_backend_panel(
             t.append(f"  {model_name}  {size_gb:.1f} GB", style=ORANGE)
             if cpu >= 1:
                 t.append(f"  {int(cpu)}% cpu", style=AMBER)
-            t.append(f"  {int(gpu)}% gpu\n", style=metric_color(gpu, "gpu"))
+            t.append(f"  {int(gpu)}% gpu\n", style=BLUE)
             err_style = RED if error_count > 0 else MUTED
             t.append(f"  {req_per_s:.1f} req/s · ", style=MUTED)
             t.append(f"{error_count} err\n", style=err_style)
@@ -305,11 +305,10 @@ def main() -> None:
                     offline=False,
                 ))
 
-            layout = Layout()
-            layout.split_row(*[Layout(p, name=n) for n, p in zip(backends.keys(), panels)])
+            cols = Columns(panels, equal=True, expand=True)
             status_bar = build_router_status_bar(router_up, sum(1 for p in panels if True), len(backends), last_successful_poll)
             from rich.console import Group
-            live.update(Group(layout, status_bar))
+            live.update(Group(cols, status_bar))
 
             time.sleep(POLL_INTERVAL)
 
