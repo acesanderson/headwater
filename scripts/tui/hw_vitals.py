@@ -18,7 +18,7 @@ from rich.text import Text
 
 BYWATER_URL   = "http://172.16.0.4:8080"
 DEEPWATER_URL = "http://172.16.0.2:8080"
-BACKWATER_URL = "http://172.16.0.9:8080"
+BACKWATER_URL = "http://172.16.0.3:8080"
 ROUTER_URL    = "http://172.16.0.4:8081"
 POLL_INTERVAL = 2.0
 
@@ -155,16 +155,16 @@ def build_backend_panel(
         t.append(f"  {pct_str}  {used}/{total}\n", style=mc)
 
     if gpu_pct is not None and vram_used_mb is not None and vram_total_mb is not None:
-        metric_row("GPU UTIL", gpu_pct, f"{mb_to_gb(vram_used_mb):.1f}", f"{mb_to_gb(vram_total_mb):.1f} GB", "gpu")
+        metric_row("GPU UTIL", gpu_pct, f"{mb_to_gb(vram_used_mb):.1f}", f"{mb_to_gb(vram_total_mb):.0f}G", "gpu")
         vram_pct = int(vram_used_mb / vram_total_mb * 100) if vram_total_mb else 0
-        metric_row("VRAM", vram_pct, f"{mb_to_gb(vram_used_mb):.1f}", f"{mb_to_gb(vram_total_mb):.1f} GB", "vram")
+        metric_row("VRAM", vram_pct, f"{mb_to_gb(vram_used_mb):.1f}", f"{mb_to_gb(vram_total_mb):.0f}G", "vram")
     else:
         t.append("GPU  —\nVRAM  —\n", style=MUTED)
 
     if cpu_pct is not None and ram_used_bytes is not None and ram_total_bytes is not None:
-        metric_row("CPU UTIL", cpu_pct, f"{bytes_to_gb(ram_used_bytes):.1f}", f"{bytes_to_gb(ram_total_bytes):.1f} GB", "cpu")
+        metric_row("CPU UTIL", cpu_pct, f"{bytes_to_gb(ram_used_bytes):.1f}", f"{bytes_to_gb(ram_total_bytes):.0f}G", "cpu")
         ram_pct = int(ram_used_bytes / ram_total_bytes * 100) if ram_total_bytes else 0
-        metric_row("RAM", ram_pct, f"{bytes_to_gb(ram_used_bytes):.1f}", f"{bytes_to_gb(ram_total_bytes):.1f} GB", "cpu")
+        metric_row("RAM", ram_pct, f"{bytes_to_gb(ram_used_bytes):.1f}", f"{bytes_to_gb(ram_total_bytes):.0f}G", "cpu")
     else:
         t.append("CPU  —\nRAM  —\n", style=MUTED)
 
