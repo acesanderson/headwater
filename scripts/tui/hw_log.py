@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import collections
 import os
+import select
 import shutil
 import subprocess
 import sys
 import termios
-import threading
 import time
 import tty
 from dataclasses import dataclass
@@ -358,24 +358,6 @@ def _fire_blast(blast_state: dict) -> None:
     )
 
 
-def _start_keyboard_listener(blast_state: dict) -> None:
-    def _run() -> None:
-        fd = sys.stdin.fileno()
-        old = termios.tcgetattr(fd)
-        try:
-            tty.cbreak(fd)
-            while True:
-                ch = os.read(fd, 1)
-                if ch == b"b":
-                    _fire_blast(blast_state)
-        except Exception:
-            pass
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old)
-
-    threading.Thread(target=_run, daemon=True).start()
-
-
 def main() -> None:
     console = Console()
     router_status = "UNREACHABLE"
@@ -389,64 +371,74 @@ def main() -> None:
     row_deque: collections.deque[PendingRow] = collections.deque()
     last_seen_ts: dict[str, float] = {"router": 0.0} | {k: 0.0 for k in SUBSERVER_URLS}
     blast_state: dict = {}
-    _start_keyboard_listener(blast_state)
 
-    with Live(console=console, refresh_per_second=2, screen=True) as live:
-        while True:
-            term_height = console.size.height
-            row_cap = compute_row_cap(term_height, HEADER_HEIGHT)
-            completed: list[PendingRow] = []
+    fd = sys.stdin.fileno()
+    old_term = termios.tcgetattr(fd)
+    try:
+        tty.cbreak(fd)
+        with Live(console=console, refresh_per_second=2, screen=True) as live:
+            while True:
+                term_height = console.size.height
+                row_cap = compute_row_cap(term_height, HEADER_HEIGHT)
+                completed: list[PendingRow] = []
 
-            # ── router ────────────────────────────────────────────────────────
-            try:
-                resp = httpx.get(f"{ROUTER_URL}/logs/last?n=100", timeout=3.0)
-                resp.raise_for_status()
-                data = resp.json()
-                router_status = "up"
-                last_successful_poll = time.time()
+                # ── router ────────────────────────────────────────────────────────
+                try:
+                    resp = httpx.get(f"{ROUTER_URL}/logs/last?n=100", timeout=3.0)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    router_status = "up"
+                    last_successful_poll = time.time()
 
-                if poll_tick % BACKEND_CHECK_INTERVAL == 0:
+                    if poll_tick % BACKEND_CHECK_INTERVAL == 0:
+                        try:
+                            s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
+                            backend_urls = list(s.json().get("backends", {}).values())
+                        except Exception:
+                            pass
+                        backend_count = count_healthy_backends(backend_urls)
+
+                    entries = data.get("entries", [])
+                    new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts["router"]]
+                    if new_entries:
+                        last_seen_ts["router"] = max(e["timestamp"] for e in new_entries)
+                    process_entries(new_entries, pending, seen, completed)
+
+                except Exception:
+                    router_status = "UNREACHABLE"
+
+                # ── subservers (direct traffic only) ──────────────────────────────
+                for name, url in SUBSERVER_URLS.items():
                     try:
-                        s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
-                        backend_urls = list(s.json().get("backends", {}).values())
+                        resp = httpx.get(f"{url}/logs/last?n=100", timeout=2.0)
+                        resp.raise_for_status()
+                        entries = resp.json().get("entries", [])
+                        new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts[name]]
+                        if new_entries:
+                            last_seen_ts[name] = max(e["timestamp"] for e in new_entries)
+                        process_subserver_entries(new_entries, url, seen, completed)
                     except Exception:
                         pass
-                    backend_count = count_healthy_backends(backend_urls)
 
-                entries = data.get("entries", [])
-                new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts["router"]]
-                if new_entries:
-                    last_seen_ts["router"] = max(e["timestamp"] for e in new_entries)
-                process_entries(new_entries, pending, seen, completed)
+                poll_tick += 1
+                for row in completed:
+                    row_deque.append(row)
 
-            except Exception:
-                router_status = "UNREACHABLE"
+                while len(row_deque) > row_cap:
+                    row_deque.popleft()
 
-            # ── subservers (direct traffic only) ──────────────────────────────
-            for name, url in SUBSERVER_URLS.items():
-                try:
-                    resp = httpx.get(f"{url}/logs/last?n=100", timeout=2.0)
-                    resp.raise_for_status()
-                    entries = resp.json().get("entries", [])
-                    new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts[name]]
-                    if new_entries:
-                        last_seen_ts[name] = max(e["timestamp"] for e in new_entries)
-                    process_subserver_entries(new_entries, url, seen, completed)
-                except Exception:
-                    pass
+                header = build_header(console, router_status, backend_count, last_successful_poll, blast_state)
+                table = build_log_table(list(row_deque))
+                live.update(Group(header, table))
 
-            poll_tick += 1
-            for row in completed:
-                row_deque.append(row)
-
-            while len(row_deque) > row_cap:
-                row_deque.popleft()
-
-            header = build_header(console, router_status, backend_count, last_successful_poll, blast_state)
-            table = build_log_table(list(row_deque))
-            live.update(Group(header, table))
-
-            time.sleep(POLL_INTERVAL)
+                # Sleep for POLL_INTERVAL but wake immediately on keypress
+                rlist, _, _ = select.select([sys.stdin], [], [], POLL_INTERVAL)
+                if rlist:
+                    ch = os.read(fd, 1)
+                    if ch == b"b":
+                        _fire_blast(blast_state)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_term)
 
 
 if __name__ == "__main__":
