@@ -368,30 +368,36 @@ def _fire_blast(blast_state: dict) -> None:
     )
 
 
+_DEMO_SCENARIOS = [
+    # (path, route, backend, model, method, weight)
+    ("/conduit/generate",           "conduit",          ROUTER_URL, "gpt-oss:latest",    "POST", 4),
+    ("/conduit/generate",           "heavy_inference",  ROUTER_URL, "qwq:latest",        "POST", 2),
+    ("/conduit/generate",           "heavy_inference",  ROUTER_URL, "deepseek-r1:70b",   "POST", 1),
+    ("/conduit/embeddings/quick",   "conduit",          ROUTER_URL, None,                "POST", 3),
+    ("/conduit/tokenize",           "conduit",          ROUTER_URL, "llama3.1:latest",   "POST", 2),
+    ("/conduit/chat/completions",   "conduit",          ROUTER_URL, "gpt-oss:latest",    "POST", 2),
+    ("/reranker/rerank",            "reranker_light",   ROUTER_URL, None,                "POST", 2),
+    ("/reranker/rerank",            "reranker_heavy",   ROUTER_URL, None,                "POST", 1),
+    ("/siphon/search",              "conduit",          ROUTER_URL, None,                "GET",  1),
+]
+
+
 def make_demo_rows(n: int) -> list[PendingRow]:
-    paths = [
-        "/conduit/generate", "/conduit/embeddings/quick", "/conduit/tokenize",
-        "/reranker/rerank", "/conduit/chat/completions", "/siphon/search",
-    ]
-    routes = ["conduit", "heavy_inference", "reranker_light", "reranker_heavy", "conduit", "conduit"]
-    backends = list(SUBSERVER_URLS.values())
-    models = ["gpt-oss:latest", "qwq:latest", "llama3.1:latest", "deepseek-r1:70b", None, None]
-    statuses = [200, 200, 200, 200, 404, 500]
-    methods = ["POST", "POST", "POST", "GET"]
+    scenarios, weights = zip(*[((p, r, b, m, meth), w) for p, r, b, m, meth, w in _DEMO_SCENARIOS])
+    statuses = [200, 200, 200, 200, 200, 404, 500]
     now = time.time()
     rows = []
     for i in range(n):
-        route = random.choice(routes)
-        backend = random.choice(backends)
+        path, route, backend, model, method = random.choices(scenarios, weights=weights, k=1)[0]
         rows.append(PendingRow(
             timestamp=now - (n - i) * 3.0,
-            path=random.choice(paths),
-            service="conduit",
+            path=path,
+            service=path.lstrip("/").split("/")[0],
             backend=backend,
-            model=random.choice(models),
+            model=model,
             route=route,
             upstream_status=random.choice(statuses),
-            method=random.choice(methods),
+            method=method,
             duration_ms=random.uniform(40, 3000),
         ))
     return rows
