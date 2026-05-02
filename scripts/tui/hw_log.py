@@ -257,9 +257,8 @@ def main() -> None:
                 last_successful_poll = time.time()
 
                 try:
-                    s = httpx.get(f"{ROUTER_URL}/status", timeout=2.0)
-                    status_data = s.json()
-                    backend_count = status_data.get("backend_count", backend_count)
+                    s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
+                    backend_count = len(s.json().get("backends", {}))
                 except Exception:
                     pass
 
