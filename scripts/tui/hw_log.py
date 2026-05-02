@@ -5,9 +5,15 @@
 from __future__ import annotations
 
 import collections
+import subprocess
+import sys
+import termios
+import threading
 import time
+import tty
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 import httpx
 from rich.console import Console, Group
@@ -282,7 +288,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
 
 # ── Header rendering ───────────────────────────────────────────────────────────
 
-def build_header(console: Console, router_status: str, backend_count: int, last_poll_s: float | None) -> Panel:
+def build_header(console: Console, router_status: str, backend_count: int, last_poll_s: float | None, blast_state: dict | None = None) -> Panel:
     logo_text = Text()
     for i, line in enumerate(LOGO_LINES):
         logo_text.append(line, style=f"bold {GREEN}")
@@ -308,6 +314,12 @@ def build_header(console: Console, router_status: str, backend_count: int, last_
     status_line.append(f" · {backend_count} backends healthy · ", style=MUTED)
     status_line.append(staleness, style=staleness_style)
 
+    blast_ts = (blast_state or {}).get("ts")
+    if blast_ts and (time.time() - blast_ts) < _BLAST_INDICATOR_SECS:
+        status_line.append(" · blasting…", style=AMBER)
+    else:
+        status_line.append(" · [b] blast", style=MUTED)
+
     combined = Text()
     combined.append_text(logo_text)
     combined.append("\n")
@@ -328,6 +340,39 @@ def count_healthy_backends(backend_urls: list[str]) -> int:
     return count
 
 
+# ── Blast integration ─────────────────────────────────────────────────────────
+
+_BLAST_SCRIPT = Path(__file__).parent / "hw_blast.py"
+_BLAST_INDICATOR_SECS = 5
+
+
+def _fire_blast(blast_state: dict) -> None:
+    blast_state["ts"] = time.time()
+    subprocess.Popen(
+        ["uv", "run", str(_BLAST_SCRIPT), "--n", "30", "--delay", "0.3"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def _start_keyboard_listener(blast_state: dict) -> None:
+    def _run() -> None:
+        fd = sys.stdin.fileno()
+        old = termios.tcgetattr(fd)
+        try:
+            tty.cbreak(fd)
+            while True:
+                ch = sys.stdin.read(1)
+                if ch == "b":
+                    _fire_blast(blast_state)
+        except Exception:
+            pass
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def main() -> None:
     console = Console()
     router_status = "UNREACHABLE"
@@ -340,6 +385,8 @@ def main() -> None:
     seen: set[str] = set()
     row_deque: collections.deque[PendingRow] = collections.deque()
     last_seen_ts: dict[str, float] = {"router": 0.0} | {k: 0.0 for k in SUBSERVER_URLS}
+    blast_state: dict = {}
+    _start_keyboard_listener(blast_state)
 
     with Live(console=console, refresh_per_second=2, screen=True) as live:
         while True:
@@ -392,7 +439,7 @@ def main() -> None:
             while len(row_deque) > row_cap:
                 row_deque.popleft()
 
-            header = build_header(console, router_status, backend_count, last_successful_poll)
+            header = build_header(console, router_status, backend_count, last_successful_poll, blast_state)
             table = build_log_table(list(row_deque))
             live.update(Group(header, table))
 
