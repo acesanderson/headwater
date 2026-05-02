@@ -375,7 +375,7 @@ def main() -> None:
     fd = sys.stdin.fileno()
     old_term = termios.tcgetattr(fd)
     try:
-        tty.cbreak(fd)
+        tty.setcbreak(fd)
         with Live(console=console, refresh_per_second=2, screen=True) as live:
             while True:
                 term_height = console.size.height
