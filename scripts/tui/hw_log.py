@@ -58,7 +58,7 @@ LOGO_LINES = [
     "    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝",
 ]
 
-COL_WIDTHS = {"TIME": 8, "CNT": 5, "METH": 5, "PATH": 28, "VIA": 18, "BACKEND": 22, "MODEL": 16, "ST": 4, "DUR": 7}
+COL_WIDTHS = {"TIME": 8, "CNT": 5, "METH": 5, "PATH": 26, "VIA": 16, "BACKEND": 20, "MODEL": 22, "ST": 4, "DUR": 7}
 
 # ── Pure helpers ───────────────────────────────────────────────────────────────
 
@@ -273,7 +273,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
             truncate(row.path, COL_WIDTHS["PATH"]),
             f"[{vc}]{via_str}[/{vc}]",
             backend_str,
-            truncate(row.model or "—", COL_WIDTHS["MODEL"]),
+            truncate((row.model.split("/")[-1] if row.model else "—"), COL_WIDTHS["MODEL"]),
             f"[{sc}]{st_str}[/{sc}]",
             format_duration(row.duration_ms),
         )
