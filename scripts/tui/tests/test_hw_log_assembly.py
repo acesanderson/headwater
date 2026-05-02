@@ -15,6 +15,20 @@ def make_entry(message: str, request_id: str, extra: dict | None = None, ts: flo
     }
 
 
+def make_finished(request_id: str, path: str, method: str, status_code: int, duration_ms: float, ts: float | None = None) -> dict:
+    return {
+        "timestamp": ts or time.time(),
+        "level": "DEBUG",
+        "logger": "server",
+        "message": "request_finished",
+        "pathname": "/x.py",
+        "request_id": request_id,
+        "extra": {"path": path, "method": method, "status_code": status_code, "duration_ms": duration_ms},
+    }
+
+
+# ── process_entries (router) ──────────────────────────────────────────────────
+
 def test_proxy_request_creates_pending_row():
     """AC-4: proxy_request entry creates a pending row keyed by request_id."""
     pending: dict[str, hw_log.PendingRow] = {}
@@ -92,3 +106,69 @@ def test_already_seen_request_id_ignored():
     hw_log.process_entries(entries, pending, seen, completed)
 
     assert "req-5" not in pending
+
+
+# ── process_subserver_entries (direct traffic) ────────────────────────────────
+
+BYWATER_URL = "http://172.16.0.4:8080"
+
+
+def test_subserver_direct_request_creates_row():
+    """Direct request_finished on subserver creates a completed row."""
+    seen: set[str] = set()
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [make_finished("sub-1", "/conduit/generate", "POST", 200, 88.0)]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert len(completed) == 1
+    row = completed[0]
+    assert row.upstream_status == 200
+    assert row.method == "POST"
+    assert row.duration_ms == 88.0
+    assert row.route is None
+    assert row.backend == BYWATER_URL
+
+
+def test_subserver_skips_already_seen_request_id():
+    """request_finished for a request_id already in seen (routed via router) is skipped."""
+    seen: set[str] = {"sub-2"}
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [make_finished("sub-2", "/conduit/generate", "POST", 200, 50.0)]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert not completed
+
+
+def test_subserver_skips_internal_paths():
+    """request_finished for /ping is filtered out."""
+    seen: set[str] = set()
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [make_finished("sub-3", "/ping", "GET", 200, 1.0)]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert not completed
+
+
+def test_subserver_adds_request_id_to_seen():
+    """After processing, request_id is added to seen to prevent router duplication."""
+    seen: set[str] = set()
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [make_finished("sub-4", "/embeddings/embed", "POST", 200, 20.0)]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert "sub-4" in seen
+
+
+def test_subserver_ignores_non_finished_messages():
+    """Only request_finished messages are processed; request_started is ignored."""
+    seen: set[str] = set()
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [make_entry("request_started", "sub-5", {"path": "/conduit/generate", "method": "POST"})]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert not completed

@@ -19,9 +19,15 @@ from rich.table import Table
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 ROUTER_URL = "http://172.16.0.4:8081"
+SUBSERVER_URLS = {
+    "bywater":   "http://172.16.0.4:8080",
+    "deepwater":  "http://172.16.0.2:8080",
+    "backwater":  "http://172.16.0.3:8080",
+}
 POLL_INTERVAL = 1.0
 HEADER_HEIGHT = 9  # 6 logo lines + 1 status + 1 col header + 1 panel border
 MAX_PENDING_CYCLES = 3
+BACKEND_CHECK_INTERVAL = 10
 
 INTERNAL_PREFIXES = frozenset([
     "/ping", "/status", "/metrics", "/logs/last", "/routes", "/gpu", "/sysinfo",
@@ -157,6 +163,43 @@ def process_entries(
         completed.append(row)
 
 
+def process_subserver_entries(
+    entries: list[dict],
+    backend_url: str,
+    seen: set[str],
+    completed: list[PendingRow],
+) -> None:
+    """Extract direct (non-routed) requests from a subserver's ring buffer.
+
+    Router-proxied requests share the same request_id and will already be in
+    `seen` after process_entries() runs. We skip those and only emit rows for
+    requests that arrived at the subserver directly.
+    """
+    for entry in entries:
+        if entry.get("message") != "request_finished":
+            continue
+        req_id = entry.get("request_id")
+        if req_id and req_id in seen:
+            continue
+        extra = entry.get("extra") or {}
+        path = extra.get("path", "")
+        if is_internal_path(path):
+            continue
+        completed.append(PendingRow(
+            timestamp=entry["timestamp"],
+            path=path,
+            service=path.lstrip("/").split("/")[0],
+            backend=backend_url,
+            model=None,
+            route=None,
+            upstream_status=extra.get("status_code"),
+            method=extra.get("method"),
+            duration_ms=extra.get("duration_ms"),
+        ))
+        if req_id:
+            seen.add(req_id)
+
+
 # ── Table rendering ───────────────────────────────────────────────────────────
 
 def build_log_table(rows: list[PendingRow]) -> Table:
@@ -233,9 +276,6 @@ def build_header(console: Console, router_status: str, backend_count: int, last_
     return Panel(combined, style="on #0a0a0a", border_style="#1a1a1a")
 
 
-BACKEND_CHECK_INTERVAL = 10  # polls between backend health checks
-
-
 def count_healthy_backends(backend_urls: list[str]) -> int:
     count = 0
     for url in backend_urls:
@@ -259,13 +299,15 @@ def main() -> None:
     pending: dict[str, PendingRow] = {}
     seen: set[str] = set()
     row_deque: collections.deque[PendingRow] = collections.deque()
-    last_seen_ts: float = 0.0
+    last_seen_ts: dict[str, float] = {"router": 0.0} | {k: 0.0 for k in SUBSERVER_URLS}
 
     with Live(console=console, refresh_per_second=2, screen=True) as live:
         while True:
             term_height = console.size.height
             row_cap = compute_row_cap(term_height, HEADER_HEIGHT)
+            completed: list[PendingRow] = []
 
+            # ── router ────────────────────────────────────────────────────────
             try:
                 resp = httpx.get(f"{ROUTER_URL}/logs/last?n=100", timeout=3.0)
                 resp.raise_for_status()
@@ -273,7 +315,6 @@ def main() -> None:
                 router_status = "up"
                 last_successful_poll = time.time()
 
-                # Refresh backend URL list every 10 polls, then ping each
                 if poll_tick % BACKEND_CHECK_INTERVAL == 0:
                     try:
                         s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
@@ -281,21 +322,32 @@ def main() -> None:
                     except Exception:
                         pass
                     backend_count = count_healthy_backends(backend_urls)
-                poll_tick += 1
 
                 entries = data.get("entries", [])
-                new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts]
+                new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts["router"]]
                 if new_entries:
-                    last_seen_ts = max(e["timestamp"] for e in new_entries)
-
-                completed: list[PendingRow] = []
+                    last_seen_ts["router"] = max(e["timestamp"] for e in new_entries)
                 process_entries(new_entries, pending, seen, completed)
-
-                for row in completed:
-                    row_deque.append(row)
 
             except Exception:
                 router_status = "UNREACHABLE"
+
+            # ── subservers (direct traffic only) ──────────────────────────────
+            for name, url in SUBSERVER_URLS.items():
+                try:
+                    resp = httpx.get(f"{url}/logs/last?n=100", timeout=2.0)
+                    resp.raise_for_status()
+                    entries = resp.json().get("entries", [])
+                    new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts[name]]
+                    if new_entries:
+                        last_seen_ts[name] = max(e["timestamp"] for e in new_entries)
+                    process_subserver_entries(new_entries, url, seen, completed)
+                except Exception:
+                    pass
+
+            poll_tick += 1
+            for row in completed:
+                row_deque.append(row)
 
             while len(row_deque) > row_cap:
                 row_deque.popleft()
