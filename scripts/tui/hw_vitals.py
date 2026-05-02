@@ -8,10 +8,10 @@ import time
 
 import httpx
 import rich.box
-from rich.columns import Columns
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
+from rich.table import Table
 from rich.text import Text
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -146,12 +146,13 @@ def build_backend_panel(
     t.append("\n")
 
     def metric_row(label: str, pct: float | None, used: str, total: str, kind: str) -> None:
-        mc = metric_color(pct or 0, kind)
+        mc = metric_color(pct if pct is not None else 0, kind)
         t.append(f"{label:<10}", style=MUTED)
-        bar_fill = int((pct or 0) / 100 * 20)
+        bar_fill = int((pct if pct is not None else 0) / 100 * 20)
         t.append("█" * bar_fill, style=mc)
         t.append("░" * (20 - bar_fill), style=DIM)
-        t.append(f"  {pct or '—'}%  {used}/{total}\n", style=mc)
+        pct_str = f"{pct}%" if pct is not None else "—"
+        t.append(f"  {pct_str}  {used}/{total}\n", style=mc)
 
     if gpu_pct is not None and vram_used_mb is not None and vram_total_mb is not None:
         metric_row("GPU UTIL", gpu_pct, f"{mb_to_gb(vram_used_mb):.1f}", f"{mb_to_gb(vram_total_mb):.1f} GB", "gpu")
@@ -218,7 +219,7 @@ def main() -> None:
         "backwater": BACKWATER_URL,
     }
 
-    with Live(console=console, refresh_per_second=1, screen=False) as live:
+    with Live(console=console, refresh_per_second=1, screen=True) as live:
         while True:
             panels = []
 
@@ -305,10 +306,13 @@ def main() -> None:
                     offline=False,
                 ))
 
-            cols = Columns(panels, equal=True, expand=True)
+            grid = Table.grid(expand=True, padding=0)
+            for _ in panels:
+                grid.add_column(ratio=1)
+            grid.add_row(*panels)
             status_bar = build_router_status_bar(router_up, sum(1 for p in panels if True), len(backends), last_successful_poll)
             from rich.console import Group
-            live.update(Group(cols, status_bar))
+            live.update(Group(grid, status_bar))
 
             time.sleep(POLL_INTERVAL)
 
