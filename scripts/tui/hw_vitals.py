@@ -139,7 +139,7 @@ def build_backend_panel(
         t.append(f"{hostname}\n", style=MUTED)
         t.append("GPU  —\nVRAM  —\nCPU  —\nRAM  —\n", style=MUTED)
         t.append("OLLAMA  —\n", style=MUTED)
-        return Panel(t, title=f"[{RED}]{name}[/{RED}]", border_style=RED, box=rich.box.ROUNDED)
+        return Panel(t, title=f"[{RED}]{name}[/{RED}]", border_style=RED, box=rich.box.HEAVY)
 
     tc = temp_color(temp_c)
     temp_str = f"{temp_c}C" if temp_c is not None else "—"
@@ -194,7 +194,7 @@ def build_backend_panel(
         t.append("  no models loaded\n", style=MUTED)
 
     sc = SERVER_COLORS.get(name, BLUE)
-    return Panel(t, title=f"[bold {sc}]{name}[/bold {sc}]", border_style=sc, box=rich.box.ROUNDED)
+    return Panel(t, title=f"[bold {sc}]{name}[/bold {sc}]", border_style=sc, box=rich.box.HEAVY)
 
 
 def build_router_status_bar(router_up: bool, backend_count: int, total_backends: int, last_poll_s: float | None) -> Text:
