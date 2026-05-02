@@ -58,7 +58,7 @@ LOGO_LINES = [
     "    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝",
 ]
 
-COL_WIDTHS = {"TIME": 8, "METH": 5, "PATH": 28, "VIA": 18, "BACKEND": 22, "MODEL": 16, "ST": 4, "DUR": 7}
+COL_WIDTHS = {"TIME": 8, "CNT": 5, "METH": 5, "PATH": 28, "VIA": 18, "BACKEND": 22, "MODEL": 16, "ST": 4, "DUR": 7}
 
 # ── Pure helpers ───────────────────────────────────────────────────────────────
 
@@ -105,6 +105,29 @@ def format_duration(ms: float | None) -> str:
     if ms is None:
         return "—"
     return f"{int(ms)}ms"
+
+# ── Row compression ───────────────────────────────────────────────────────────
+
+def _row_signature(row: "PendingRow") -> tuple:
+    return (row.path, row.method, row.route, row.backend, row.model, row.upstream_status)
+
+
+def compress_rows(rows: list["PendingRow"]) -> list[tuple["PendingRow", int]]:
+    """Collapse consecutive rows with identical signatures into (row, count) pairs."""
+    if not rows:
+        return []
+    result: list[tuple[PendingRow, int]] = []
+    current, count = rows[0], 1
+    for row in rows[1:]:
+        if _row_signature(row) == _row_signature(current):
+            count += 1
+            current = row  # keep latest timestamp
+        else:
+            result.append((current, count))
+            current, count = row, 1
+    result.append((current, count))
+    return result
+
 
 # ── Row assembly ──────────────────────────────────────────────────────────────
 
@@ -223,6 +246,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
         expand=True,
     )
     table.add_column("TIME",         style=MUTED,   width=COL_WIDTHS["TIME"],    no_wrap=True)
+    table.add_column("CNT",                        width=COL_WIDTHS["CNT"],     no_wrap=True)
     table.add_column("METH",         style=GREEN,   width=COL_WIDTHS["METH"],    no_wrap=True)
     table.add_column("SERVICE/PATH", style=YELLOW,  width=COL_WIDTHS["PATH"],    no_wrap=True)
     table.add_column("VIA",                         width=COL_WIDTHS["VIA"],     no_wrap=True)
@@ -231,8 +255,9 @@ def build_log_table(rows: list[PendingRow]) -> Table:
     table.add_column("ST",                          width=COL_WIDTHS["ST"],      no_wrap=True)
     table.add_column("DUR",          style=MUTED,   width=COL_WIDTHS["DUR"],     no_wrap=True)
 
-    for row in rows:
+    for row, count in compress_rows(rows):
         ts = datetime.fromtimestamp(row.timestamp).strftime("%H:%M:%S")
+        cnt_str = f"[{AMBER}]×{count}[/{AMBER}]" if count > 1 else ""
         via_str = truncate(via_text(row.route), COL_WIDTHS["VIA"])
         vc = via_color(row.route)
         st_str = str(row.upstream_status) if row.upstream_status is not None else "—"
@@ -243,6 +268,7 @@ def build_log_table(rows: list[PendingRow]) -> Table:
 
         table.add_row(
             ts,
+            cnt_str,
             row.method or "—",
             truncate(row.path, COL_WIDTHS["PATH"]),
             f"[{vc}]{via_str}[/{vc}]",

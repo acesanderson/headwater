@@ -108,6 +108,58 @@ def test_already_seen_request_id_ignored():
     assert "req-5" not in pending
 
 
+# ── compress_rows ────────────────────────────────────────────────────────────
+
+def make_row(path: str, method: str = "POST", route: str | None = "conduit",
+             backend: str = "http://172.16.0.4:8080", model: str | None = None,
+             status: int = 200, ts: float | None = None) -> hw_log.PendingRow:
+    return hw_log.PendingRow(
+        timestamp=ts or time.time(),
+        path=path, service="conduit", backend=backend,
+        model=model, route=route, upstream_status=status,
+        method=method, duration_ms=10.0,
+    )
+
+
+def test_compress_rows_single_row():
+    rows = [make_row("/a")]
+    result = hw_log.compress_rows(rows)
+    assert result == [(rows[0], 1)]
+
+
+def test_compress_rows_consecutive_identical():
+    rows = [make_row("/a"), make_row("/a"), make_row("/a")]
+    result = hw_log.compress_rows(rows)
+    assert len(result) == 1
+    assert result[0][1] == 3
+    assert result[0][0] is rows[2]  # latest row kept
+
+
+def test_compress_rows_different_paths_not_collapsed():
+    rows = [make_row("/a"), make_row("/b"), make_row("/a")]
+    result = hw_log.compress_rows(rows)
+    assert len(result) == 3
+    assert all(count == 1 for _, count in result)
+
+
+def test_compress_rows_breaks_on_different_status():
+    rows = [make_row("/a", status=200), make_row("/a", status=500)]
+    result = hw_log.compress_rows(rows)
+    assert len(result) == 2
+
+
+def test_compress_rows_empty():
+    assert hw_log.compress_rows([]) == []
+
+
+def test_compress_rows_groups_then_different():
+    rows = [make_row("/a"), make_row("/a"), make_row("/b"), make_row("/b"), make_row("/b")]
+    result = hw_log.compress_rows(rows)
+    assert len(result) == 2
+    assert result[0][1] == 2
+    assert result[1][1] == 3
+
+
 # ── process_subserver_entries (direct traffic) ────────────────────────────────
 
 BYWATER_URL = "http://172.16.0.4:8080"
