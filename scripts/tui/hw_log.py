@@ -39,7 +39,7 @@ IP_TO_HOST = {
     "172.16.0.11": "lasker",
 }
 POLL_INTERVAL = 1.0
-HEADER_HEIGHT = 9  # 6 logo lines + 1 status + 1 col header + 1 panel border
+HEADER_HEIGHT = 6  # 6 logo lines + 1 status + 1 col header + 1 panel border
 MAX_PENDING_CYCLES = 3
 BACKEND_CHECK_INTERVAL = 10
 
