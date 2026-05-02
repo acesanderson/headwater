@@ -1453,13 +1453,13 @@ git commit -m "refactor: move Group import to module level in hw_log.py"
 
 ---
 
-## Task 11: `hw_vitals.py` — panel layout with mock data *(AC-10)*
+## Task 11: `hw_vitals.py` — panel layout with mock data *(AC-10)* ✅ DONE
 
 **Files:**
 - Create: `scripts/tui/hw_vitals.py`
 - Create: `scripts/tui/tests/test_hw_vitals_helpers.py`
 
-- [ ] **Step 1: Write the failing helper tests**
+- [x] **Step 1: Write the failing helper tests**
 
 Create `scripts/tui/tests/test_hw_vitals_helpers.py`:
 
@@ -1537,7 +1537,7 @@ def test_format_uptime_hours_only():
 import pytest
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 uv run --with pytest --with rich --with httpx pytest scripts/tui/tests/test_hw_vitals_helpers.py -v
@@ -1545,7 +1545,7 @@ uv run --with pytest --with rich --with httpx pytest scripts/tui/tests/test_hw_v
 
 Expected: FAIL — `hw_vitals` module not found.
 
-- [ ] **Step 3: Create `scripts/tui/hw_vitals.py` with mock panel layout**
+- [x] **Step 3: Create `scripts/tui/hw_vitals.py` with mock panel layout**
 
 Create `scripts/tui/hw_vitals.py`:
 
@@ -1798,7 +1798,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run helper tests to verify they pass**
+- [x] **Step 4: Run helper tests to verify they pass**
 
 ```bash
 uv run --with pytest --with rich --with httpx pytest scripts/tui/tests/test_hw_vitals_helpers.py -v
@@ -1806,7 +1806,7 @@ uv run --with pytest --with rich --with httpx pytest scripts/tui/tests/test_hw_v
 
 Expected: all PASS.
 
-- [ ] **Step 5: Smoke-test the mock layout locally**
+- [x] **Step 5: Smoke-test the mock layout locally**
 
 ```bash
 uv run scripts/tui/hw_vitals.py
@@ -1814,7 +1814,7 @@ uv run scripts/tui/hw_vitals.py
 
 Expected: two panels side-by-side with mock GPU/CPU metrics visible. Ctrl-C to exit.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/tui/hw_vitals.py scripts/tui/tests/test_hw_vitals_helpers.py
@@ -1823,7 +1823,7 @@ git commit -m "feat(AC-10): hw_vitals.py panel layout with mock data; pure helpe
 
 ---
 
-## HITL Gate 4 — `hw-vitals` panel layout visual review on Lasker (mock data)
+## HITL Gate 4 — `hw-vitals` panel layout visual review on Lasker (mock data) ✅ PASSED (2026-05-01)
 
 **Deploy:**
 ```bash
@@ -1848,12 +1848,12 @@ ssh lasker "uv run ~/.local/bin/hw_vitals.py"
 
 ---
 
-## Task 12: `hw_vitals.py` — wire live GPU data and temperature colors *(AC-11)*
+## Task 12: `hw_vitals.py` — wire live GPU data and temperature colors *(AC-11)* ✅ DONE
 
 **Files:**
 - Modify: `scripts/tui/hw_vitals.py` — replace mock data with live `/gpu` polling
 
-- [ ] **Step 1: Write the failing test for GPU data fetch**
+- [x] **Step 1: Write the failing test for GPU data fetch**
 
 Add to `scripts/tui/tests/test_hw_vitals_helpers.py`:
 
@@ -1883,7 +1883,7 @@ def test_compute_error_count_counts_4xx_and_5xx():
     assert count == 2
 ```
 
-- [ ] **Step 2: Run to verify new tests pass (they should — functions already exist)**
+- [x] **Step 2: Run to verify new tests pass (they should — functions already exist)**
 
 ```bash
 uv run --with pytest --with rich --with httpx pytest scripts/tui/tests/test_hw_vitals_helpers.py -v
@@ -1891,7 +1891,7 @@ uv run --with pytest --with rich --with httpx pytest scripts/tui/tests/test_hw_v
 
 Expected: all PASS.
 
-- [ ] **Step 3: Replace mock-data `main()` with live polling from `/gpu`**
+- [x] **Step 3: Replace mock-data `main()` with live polling from `/gpu`**
 
 Replace the `main()` function in `hw_vitals.py`:
 
@@ -1995,7 +1995,7 @@ def main() -> None:
             time.sleep(POLL_INTERVAL)
 ```
 
-- [ ] **Step 4: Smoke-test live polling**
+- [x] **Step 4: Smoke-test live polling**
 
 ```bash
 uv run scripts/tui/hw_vitals.py
@@ -2003,7 +2003,7 @@ uv run scripts/tui/hw_vitals.py
 
 Expected: live GPU data from bywater and deepwater. If either host is unreachable, its panel shows OFFLINE.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/tui/hw_vitals.py
@@ -2012,12 +2012,12 @@ git commit -m "feat(AC-11): hw_vitals wired to live /gpu endpoint with temperatu
 
 ---
 
-## Task 13: `hw_vitals.py` — `/sysinfo` 404 handling *(AC-15)*
+## Task 13: `hw_vitals.py` — `/sysinfo` 404 handling *(AC-15)* ✅ DONE
 
 **Files:**
 - Modify: `scripts/tui/hw_vitals.py` — one-time stderr warning on 404
 
-- [ ] **Step 1: Add 404-specific handling in the `/sysinfo` fetch block**
+- [x] **Step 1: Add 404-specific handling in the `/sysinfo` fetch block**
 
 In `main()`, replace the bare `except Exception` for the sysinfo fetch with:
 
@@ -2043,7 +2043,7 @@ In `main()`, replace the bare `except Exception` for the sysinfo fetch with:
 
 When `sys_data is None`, the panel already shows `cpu_pct=None, ram_used_bytes=None, ram_total_bytes=None`, which renders as `—` for CPU and RAM. *(AC-15)*
 
-- [ ] **Step 2: Smoke-test**
+- [x] **Step 2: Smoke-test**
 
 ```bash
 uv run scripts/tui/hw_vitals.py
@@ -2051,7 +2051,7 @@ uv run scripts/tui/hw_vitals.py
 
 Verify no crash. If you temporarily point a backend URL to an address without /sysinfo, you should see the one-time warning on stderr and `—` values in the panel.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/tui/hw_vitals.py
@@ -2060,7 +2060,7 @@ git commit -m "feat(AC-15): one-time stderr warning when /sysinfo returns 404; C
 
 ---
 
-## HITL Gate 5 — `hw-vitals` with live data on Lasker
+## HITL Gate 5 — `hw-vitals` with live data on Lasker ✅ PASSED (2026-05-02)
 
 **Deploy:**
 ```bash
