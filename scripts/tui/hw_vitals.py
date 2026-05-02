@@ -139,9 +139,9 @@ def build_backend_panel(
     temp_str = f"{temp_c}C" if temp_c is not None else "—"
     uptime_str = format_uptime(uptime_s) if uptime_s is not None else "—"
 
-    t.append(f"{name}  ", style=f"bold {BLUE}")
+    t.append(f"{name.upper()}\n", style="bold white")
     t.append("* ", style=f"bold {tc}")
-    t.append(f"{temp_str}\n", style=tc)
+    t.append(f"{temp_str}  ", style=tc)
     t.append(f"{hostname} · {gpu_name} · up {uptime_str}\n", style=MUTED)
     t.append("\n")
 
