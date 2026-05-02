@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import collections
+import os
+import shutil
 import subprocess
 import sys
 import termios
@@ -347,9 +349,10 @@ _BLAST_INDICATOR_SECS = 5
 
 
 def _fire_blast(blast_state: dict) -> None:
+    uv = shutil.which("uv") or "uv"
     blast_state["ts"] = time.time()
     subprocess.Popen(
-        ["uv", "run", str(_BLAST_SCRIPT), "--n", "30", "--delay", "0.3"],
+        [uv, "run", str(_BLAST_SCRIPT), "--n", "30", "--delay", "0.3"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -362,8 +365,8 @@ def _start_keyboard_listener(blast_state: dict) -> None:
         try:
             tty.cbreak(fd)
             while True:
-                ch = sys.stdin.read(1)
-                if ch == "b":
+                ch = os.read(fd, 1)
+                if ch == b"b":
                     _fire_blast(blast_state)
         except Exception:
             pass
