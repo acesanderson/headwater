@@ -55,7 +55,7 @@ PURPLE = "#c586c0"
 BLUE   = "#6a9fb5"
 ORANGE = "#ce9178"
 YELLOW = "#dcdcaa"
-MUTED  = "#808080"
+MUTED  = "#ffffff"
 
 HOST_COLORS = {
     "caruana":   YELLOW,      # bywater  — matches logo.py \033[33m
