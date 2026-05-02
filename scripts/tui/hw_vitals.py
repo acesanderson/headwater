@@ -139,7 +139,7 @@ def build_backend_panel(
         t.append(f"{hostname}\n", style=MUTED)
         t.append("GPU  —\nVRAM  —\nCPU  —\nRAM  —\n", style=MUTED)
         t.append("OLLAMA  —\n", style=MUTED)
-        return Panel(t, title=f"[{RED}]{name}[/{RED}]", border_style=RED, box=rich.box.HEAVY, padding=(0, 1))
+        return Panel(t, title=f"[{RED}]{name}[/{RED}]", border_style=RED, box=rich.box.HEAVY, padding=(0, 2))
 
     tc = temp_color(temp_c)
     temp_str = f"{temp_c}C" if temp_c is not None else "—"
@@ -194,7 +194,7 @@ def build_backend_panel(
         t.append("  no models loaded\n", style=MUTED)
 
     sc = SERVER_COLORS.get(name, BLUE)
-    return Panel(t, title=f"[bold {sc}]{name}[/bold {sc}]", border_style=sc, box=rich.box.HEAVY, padding=(0, 1))
+    return Panel(t, title=f"[bold {sc}]{name}[/bold {sc}]", border_style=sc, box=rich.box.HEAVY, padding=(0, 2))
 
 
 def build_router_status_bar(router_up: bool, backend_count: int, total_backends: int, last_poll_s: float | None) -> Text:
@@ -316,7 +316,7 @@ def main() -> None:
 
             # 2x2 grid: top row filled, bottom-left filled, bottom-right empty
             padded = panels + [""] * (4 - len(panels))
-            grid = Table.grid(expand=True, padding=0)
+            grid = Table.grid(expand=True, padding=(0, 1))
             grid.add_column(ratio=1)
             grid.add_column(ratio=1)
             grid.add_row(padded[0], padded[1])
