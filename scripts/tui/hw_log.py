@@ -4,8 +4,10 @@
 # ///
 from __future__ import annotations
 
+import argparse
 import collections
 import os
+import random
 import select
 import shutil
 import subprocess
@@ -39,7 +41,7 @@ IP_TO_HOST = {
     "172.16.0.11": "lasker",
 }
 POLL_INTERVAL = 1.0
-HEADER_HEIGHT = 6  # 6 logo lines + 1 status + 1 col header + 1 panel border
+HEADER_HEIGHT = 9  # 6 logo lines + 1 status + 1 col header + 1 panel border
 MAX_PENDING_CYCLES = 3
 BACKEND_CHECK_INTERVAL = 10
 
@@ -366,11 +368,44 @@ def _fire_blast(blast_state: dict) -> None:
     )
 
 
+def make_demo_rows(n: int) -> list[PendingRow]:
+    paths = [
+        "/conduit/generate", "/conduit/embeddings/quick", "/conduit/tokenize",
+        "/reranker/rerank", "/conduit/chat/completions", "/siphon/search",
+    ]
+    routes = ["conduit", "heavy_inference", "reranker_light", "reranker_heavy", "conduit", "conduit"]
+    backends = list(SUBSERVER_URLS.values())
+    models = ["gpt-oss:latest", "qwq:latest", "llama3.1:latest", "deepseek-r1:70b", None, None]
+    statuses = [200, 200, 200, 200, 404, 500]
+    methods = ["POST", "POST", "POST", "GET"]
+    now = time.time()
+    rows = []
+    for i in range(n):
+        route = random.choice(routes)
+        backend = random.choice(backends)
+        rows.append(PendingRow(
+            timestamp=now - (n - i) * 3.0,
+            path=random.choice(paths),
+            service="conduit",
+            backend=backend,
+            model=random.choice(models),
+            route=route,
+            upstream_status=random.choice(statuses),
+            method=random.choice(methods),
+            duration_ms=random.uniform(40, 3000),
+        ))
+    return rows
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--demo", action="store_true", help="Populate with dummy rows for visual testing (no network calls)")
+    args = parser.parse_args()
+
     console = Console()
-    router_status = "UNREACHABLE"
-    backend_count = 0
-    last_successful_poll: float | None = None
+    router_status = "up" if args.demo else "UNREACHABLE"
+    backend_count = 3 if args.demo else 0
+    last_successful_poll: float | None = time.time() if args.demo else None
     backend_urls: list[str] = []
     poll_tick = 0
 
@@ -379,6 +414,10 @@ def main() -> None:
     row_deque: collections.deque[PendingRow] = collections.deque()
     last_seen_ts: dict[str, float] = {"router": 0.0} | {k: 0.0 for k in SUBSERVER_URLS}
     blast_state: dict = {}
+
+    if args.demo:
+        for row in make_demo_rows(50):
+            row_deque.append(row)
 
     fd = sys.stdin.fileno()
     old_term = termios.tcgetattr(fd)
@@ -390,43 +429,44 @@ def main() -> None:
                 row_cap = compute_row_cap(term_height, HEADER_HEIGHT)
                 completed: list[PendingRow] = []
 
-                # ── router ────────────────────────────────────────────────────────
-                try:
-                    resp = httpx.get(f"{ROUTER_URL}/logs/last?n=100", timeout=3.0)
-                    resp.raise_for_status()
-                    data = resp.json()
-                    router_status = "up"
-                    last_successful_poll = time.time()
+                if not args.demo:
+                    # ── router ────────────────────────────────────────────────────
+                    try:
+                        resp = httpx.get(f"{ROUTER_URL}/logs/last?n=100", timeout=3.0)
+                        resp.raise_for_status()
+                        data = resp.json()
+                        router_status = "up"
+                        last_successful_poll = time.time()
 
-                    if poll_tick % BACKEND_CHECK_INTERVAL == 0:
+                        if poll_tick % BACKEND_CHECK_INTERVAL == 0:
+                            try:
+                                s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
+                                backend_urls = list(s.json().get("backends", {}).values())
+                            except Exception:
+                                pass
+                            backend_count = count_healthy_backends(backend_urls)
+
+                        entries = data.get("entries", [])
+                        new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts["router"]]
+                        if new_entries:
+                            last_seen_ts["router"] = max(e["timestamp"] for e in new_entries)
+                        process_entries(new_entries, pending, seen, completed)
+
+                    except Exception:
+                        router_status = "UNREACHABLE"
+
+                    # ── subservers (direct traffic only) ──────────────────────────
+                    for name, url in SUBSERVER_URLS.items():
                         try:
-                            s = httpx.get(f"{ROUTER_URL}/routes/", timeout=2.0)
-                            backend_urls = list(s.json().get("backends", {}).values())
+                            resp = httpx.get(f"{url}/logs/last?n=100", timeout=2.0)
+                            resp.raise_for_status()
+                            entries = resp.json().get("entries", [])
+                            new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts[name]]
+                            if new_entries:
+                                last_seen_ts[name] = max(e["timestamp"] for e in new_entries)
+                            process_subserver_entries(new_entries, url, seen, completed)
                         except Exception:
                             pass
-                        backend_count = count_healthy_backends(backend_urls)
-
-                    entries = data.get("entries", [])
-                    new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts["router"]]
-                    if new_entries:
-                        last_seen_ts["router"] = max(e["timestamp"] for e in new_entries)
-                    process_entries(new_entries, pending, seen, completed)
-
-                except Exception:
-                    router_status = "UNREACHABLE"
-
-                # ── subservers (direct traffic only) ──────────────────────────────
-                for name, url in SUBSERVER_URLS.items():
-                    try:
-                        resp = httpx.get(f"{url}/logs/last?n=100", timeout=2.0)
-                        resp.raise_for_status()
-                        entries = resp.json().get("entries", [])
-                        new_entries = [e for e in entries if e.get("timestamp", 0) > last_seen_ts[name]]
-                        if new_entries:
-                            last_seen_ts[name] = max(e["timestamp"] for e in new_entries)
-                        process_subserver_entries(new_entries, url, seen, completed)
-                    except Exception:
-                        pass
 
                 poll_tick += 1
                 for row in completed:
