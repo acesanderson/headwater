@@ -27,7 +27,7 @@ AMBER  = "#e8c07d"
 RED    = "#f44747"
 BLUE   = "#9cdcfe"
 ORANGE = "#ce9178"
-MUTED  = "#aaaaaa"
+MUTED  = "#ffffff"
 DIM    = "#555555"
 
 _GPU_THRESHOLDS  = (60, 85)
