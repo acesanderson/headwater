@@ -7,6 +7,7 @@ from __future__ import annotations
 import time
 
 import httpx
+import rich.box
 from rich.console import Console
 from rich.live import Live
 from rich.layout import Layout
@@ -17,6 +18,7 @@ from rich.text import Text
 
 BYWATER_URL   = "http://172.16.0.4:8080"
 DEEPWATER_URL = "http://172.16.0.2:8080"
+BACKWATER_URL = "http://172.16.0.9:8080"
 ROUTER_URL    = "http://172.16.0.4:8081"
 POLL_INTERVAL = 2.0
 
@@ -25,8 +27,8 @@ AMBER  = "#e8c07d"
 RED    = "#f44747"
 BLUE   = "#9cdcfe"
 ORANGE = "#ce9178"
-MUTED  = "#555555"
-DIM    = "#333333"
+MUTED  = "#aaaaaa"
+DIM    = "#555555"
 
 _GPU_THRESHOLDS  = (60, 85)
 _VRAM_THRESHOLDS = (70, 90)
@@ -131,7 +133,7 @@ def build_backend_panel(
         t.append(f"{hostname}\n", style=MUTED)
         t.append("GPU  —\nVRAM  —\nCPU  —\nRAM  —\n", style=MUTED)
         t.append("OLLAMA  —\n", style=MUTED)
-        return Panel(t, title=f"[{RED}]{name}[/{RED}]", border_style=RED)
+        return Panel(t, title=f"[{RED}]{name}[/{RED}]", border_style=RED, box=rich.box.ROUNDED)
 
     tc = temp_color(temp_c)
     temp_str = f"{temp_c}C" if temp_c is not None else "—"
@@ -183,7 +185,7 @@ def build_backend_panel(
     else:
         t.append("  no models loaded\n", style=MUTED)
 
-    return Panel(t, title=f"[{BLUE}]{name}[/{BLUE}]", border_style="#2a2a2a")
+    return Panel(t, title=f"[{BLUE}]{name}[/{BLUE}]", border_style="white", box=rich.box.ROUNDED)
 
 
 def build_router_status_bar(router_up: bool, backend_count: int, total_backends: int, last_poll_s: float | None) -> Text:
@@ -213,6 +215,7 @@ def main() -> None:
     backends = {
         "bywater": BYWATER_URL,
         "deepwater": DEEPWATER_URL,
+        "backwater": BACKWATER_URL,
     }
 
     with Live(console=console, refresh_per_second=1, screen=False) as live:
