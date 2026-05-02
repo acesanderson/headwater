@@ -244,7 +244,7 @@ def main() -> None:
     row_deque: collections.deque[PendingRow] = collections.deque()
     last_seen_ts: float = 0.0
 
-    with Live(console=console, refresh_per_second=2, screen=False) as live:
+    with Live(console=console, refresh_per_second=2, screen=True) as live:
         while True:
             term_height = console.size.height
             row_cap = compute_row_cap(term_height, HEADER_HEIGHT)
