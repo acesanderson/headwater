@@ -2,13 +2,14 @@
 # Deploy headwater code changes to remote servers.
 #
 # Usage:
-#   ./scripts/deploy.sh [--sync-deps] [caruana|alphablue|botvinnik|all]
+#   ./scripts/deploy.sh [--sync-deps] [caruana|alphablue|botvinnik|lasker|all]
 #
 # Targets:
 #   caruana   — headwaterrouter (8081) + bywater (8080)
 #   alphablue — deepwater (8080)
 #   botvinnik — backwater (8080)
-#   all       — all three (default)
+#   lasker    — git pull only (no services)
+#   all       — all four (default)
 #
 # --sync-deps: run `uv sync` on the remote after pulling (needed when
 #              pyproject.toml or uv.lock changed; skipped by default)
@@ -22,6 +23,7 @@ declare -A REMOTE_REPO=(
     [caruana]="/home/bianders/Brian_Code/headwater"
     [alphablue]="/home/fishhouses/Brian_Code/headwater"
     [botvinnik]="/home/fishhouses/Brian_Code/headwater"
+    [lasker]="/home/fishhouses/Brian_Code/headwater"
 )
 
 # --- parse args ---
@@ -31,7 +33,7 @@ TARGET="all"
 for arg in "$@"; do
     case "$arg" in
         --sync-deps) SYNC_DEPS=1 ;;
-        caruana|alphablue|botvinnik|all) TARGET="$arg" ;;
+        caruana|alphablue|botvinnik|lasker|all) TARGET="$arg" ;;
         *) echo "Unknown argument: $arg"; exit 1 ;;
     esac
 done
@@ -78,6 +80,13 @@ remote_deploy() {
     done
 }
 
+lasker_pull() {
+    local repo="${REMOTE_REPO[lasker]}"
+    echo "==> [lasker] pulling code..."
+    ssh lasker "git -C $repo pull --ff-only https://${GITHUB_PERSONAL_TOKEN}@github.com/acesanderson/headwater.git"
+    echo "==> [lasker] done (no services to restart)"
+}
+
 # --- push local changes first ---
 echo "==> pushing to origin..."
 git -C "$LOCAL_REPO" push
@@ -93,10 +102,14 @@ case "$TARGET" in
     botvinnik)
         remote_deploy botvinnik backwater
         ;;
+    lasker)
+        lasker_pull
+        ;;
     all)
         remote_deploy caruana headwaterrouter bywater
         remote_deploy alphablue deepwater
         remote_deploy botvinnik backwater
+        lasker_pull
         ;;
 esac
 
