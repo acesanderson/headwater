@@ -203,38 +203,111 @@ def build_router_status_bar(router_up: bool, backend_count: int, total_backends:
     return t
 
 
-# ── Hardcoded mock data for Gate 4 visual review ───────────────────────────────
-
-_MOCK_BYWATER = dict(
-    name="bywater", hostname="caruana", gpu_name="RTX 4090M", uptime_s=2 * 86400 + 4 * 3600,
-    gpu_pct=8, vram_used_mb=4096, vram_total_mb=16384, temp_c=54,
-    cpu_pct=12.0, ram_used_bytes=5_798_205_440, ram_total_bytes=17_179_869_184,
-    ollama_models=[{"name": "gpt-oss:latest", "size_mb": 3276, "vram_pct": 8, "cpu_pct": 0}],
-    req_per_s=1.2, error_count=0, offline=False,
-)
-_MOCK_DEEPWATER = dict(
-    name="deepwater", hostname="alphablue", gpu_name="RTX 3090", uptime_s=2 * 86400 + 4 * 3600,
-    gpu_pct=91, vram_used_mb=40755, vram_total_mb=49152, temp_c=81,
-    cpu_pct=5.0, ram_used_bytes=24_000_000_000, ram_total_bytes=68_719_476_736,
-    ollama_models=[{"name": "qwq:latest", "size_mb": 34918, "vram_pct": 91, "cpu_pct": 18}],
-    req_per_s=0.1, error_count=0, offline=False,
-)
-
-
 def main() -> None:
     console = Console()
+    router_up = False
+    last_successful_poll: float | None = None
+    start_time = time.time()
+    log_entries: list[dict] = []
+
+    backends = {
+        "bywater": BYWATER_URL,
+        "deepwater": DEEPWATER_URL,
+    }
 
     with Live(console=console, refresh_per_second=1, screen=False) as live:
         while True:
-            bw_panel = build_backend_panel(**_MOCK_BYWATER)
-            dw_panel = build_backend_panel(**_MOCK_DEEPWATER)
+            panels = []
+
+            try:
+                resp = httpx.get(f"{ROUTER_URL}/logs/last?n=500", timeout=3.0)
+                resp.raise_for_status()
+                log_entries = resp.json().get("entries", [])
+                router_up = True
+                last_successful_poll = time.time()
+            except Exception:
+                router_up = False
+
+            for name, base_url in backends.items():
+                offline = False
+                gpu_data: dict | None = None
+                sys_data: dict | None = None
+                status_data: dict | None = None
+
+                try:
+                    r = httpx.get(f"{base_url}/gpu", timeout=5.0)
+                    r.raise_for_status()
+                    gpu_data = r.json()
+                except Exception:
+                    offline = True
+
+                if not offline:
+                    _sysinfo_404_warned: set[str] = getattr(main, "_sysinfo_404_warned", set())
+                    try:
+                        r = httpx.get(f"{base_url}/sysinfo", timeout=5.0)
+                        if r.status_code == 404:
+                            if name not in _sysinfo_404_warned:
+                                import sys
+                                print(f"WARNING: {name} /sysinfo returned 404 — CPU/RAM will show —", file=sys.stderr)
+                                _sysinfo_404_warned.add(name)
+                                main._sysinfo_404_warned = _sysinfo_404_warned
+                            sys_data = None
+                        else:
+                            r.raise_for_status()
+                            sys_data = r.json()
+                    except httpx.HTTPStatusError:
+                        sys_data = None
+                    except Exception:
+                        sys_data = None
+
+                    try:
+                        r = httpx.get(f"{base_url}/status", timeout=5.0)
+                        r.raise_for_status()
+                        status_data = r.json()
+                    except Exception:
+                        status_data = None
+
+                now = time.time()
+                rps = compute_req_per_s(log_entries, base_url, now, start_time)
+                errs = compute_error_count(log_entries, base_url, now)
+
+                if offline or gpu_data is None:
+                    panels.append(build_backend_panel(
+                        name=name, hostname="—", gpu_name="—", uptime_s=None,
+                        gpu_pct=None, vram_used_mb=None, vram_total_mb=None, temp_c=None,
+                        cpu_pct=None, ram_used_bytes=None, ram_total_bytes=None,
+                        ollama_models=[], req_per_s=0.0, error_count=0, offline=True,
+                    ))
+                    continue
+
+                gpus = gpu_data.get("gpus", [])
+                gpu = gpus[0] if gpus else {}
+                gpu_pct = gpu.get("utilization_pct")
+                vram_used_mb = gpu.get("vram_used_mb")
+                vram_total_mb = gpu.get("vram_total_mb")
+                temp_c = gpu.get("temperature_c")
+                hostname = gpu_data.get("server_name", name)
+                gpu_name = gpu.get("name", "—")
+                uptime_s = status_data.get("uptime") if status_data else None
+                cpu_pct = sys_data.get("cpu_percent") if sys_data else None
+                ram_used = sys_data.get("ram_used_bytes") if sys_data else None
+                ram_total = sys_data.get("ram_total_bytes") if sys_data else None
+                ollama_models = gpu_data.get("ollama_loaded_models", [])
+
+                panels.append(build_backend_panel(
+                    name=name, hostname=hostname, gpu_name=gpu_name, uptime_s=uptime_s,
+                    gpu_pct=gpu_pct, vram_used_mb=vram_used_mb, vram_total_mb=vram_total_mb,
+                    temp_c=temp_c, cpu_pct=cpu_pct, ram_used_bytes=ram_used, ram_total_bytes=ram_total,
+                    ollama_models=ollama_models, req_per_s=rps, error_count=errs,
+                    offline=False,
+                ))
 
             layout = Layout()
-            layout.split_row(Layout(bw_panel, name="bywater"), Layout(dw_panel, name="deepwater"))
-
-            status_bar = build_router_status_bar(True, 2, 2, time.time())
+            layout.split_row(*[Layout(p, name=n) for n, p in zip(backends.keys(), panels)])
+            status_bar = build_router_status_bar(router_up, sum(1 for p in panels if True), len(backends), last_successful_poll)
             from rich.console import Group
             live.update(Group(layout, status_bar))
+
             time.sleep(POLL_INTERVAL)
 
 
