@@ -85,7 +85,7 @@ lasker_pull() {
     echo "==> [lasker] pulling code..."
     ssh lasker "git -C $repo pull --ff-only https://${GITHUB_PERSONAL_TOKEN}@github.com/acesanderson/headwater.git"
     echo "==> [lasker] restarting hw_log + hw_vitals..."
-    ssh lasker "bash ~/restart_hw.sh"
+    ssh lasker "bash $repo/scripts/lasker/restart_hw.sh"
 }
 
 # --- push local changes first ---
