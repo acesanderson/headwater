@@ -8,6 +8,10 @@ __all__ = [
     "JsonSchemaFormat",
     "ResponseFormat",
     "OpenAIChatRequest",
+    "ResponsesInputMessage",
+    "ResponsesTextFormat",
+    "ResponsesText",
+    "OpenAIResponsesRequest",
 ]
 
 
@@ -63,3 +67,26 @@ class OpenAIChatRequest(BaseModel):
                     "Conduit requires at least one payload field on AssistantMessage."
                 )
         return self
+
+
+class ResponsesInputMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ResponsesTextFormat(BaseModel):
+    type: Literal["json_schema", "text"]
+    json_schema: JsonSchemaFormat | None = None
+
+
+class ResponsesText(BaseModel):
+    format: ResponsesTextFormat | None = None
+
+
+class OpenAIResponsesRequest(BaseModel):
+    model: str
+    input: str | list[ResponsesInputMessage]
+    text: ResponsesText | None = None
+    max_output_tokens: int | None = Field(default=None, ge=1)
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    use_cache: bool = True

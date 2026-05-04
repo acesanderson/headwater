@@ -71,6 +71,10 @@ from headwater_api.classes.conduit_classes.openai_compat import (
     JsonSchemaFormat,
     ResponseFormat,
     OpenAIChatRequest,
+    ResponsesInputMessage,
+    ResponsesTextFormat,
+    ResponsesText,
+    OpenAIResponsesRequest,
 )
 
 # Anthropic compat
@@ -131,6 +135,10 @@ __all__ = [
     "JsonSchemaFormat",
     "ResponseFormat",
     "OpenAIChatRequest",
+    "ResponsesInputMessage",
+    "ResponsesTextFormat",
+    "ResponsesText",
+    "OpenAIResponsesRequest",
     # Anthropic compat
     "AnthropicContentBlock",
     "AnthropicMessage",
