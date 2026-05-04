@@ -152,7 +152,7 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
                 "id": msg_id,
                 "role": "assistant",
                 "content": [
-                    {"type": "output_text", "text": content}
+                    {"type": "output_text", "text": content, "annotations": []}
                 ],
             }
         ],
