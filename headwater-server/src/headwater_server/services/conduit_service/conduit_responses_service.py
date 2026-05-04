@@ -144,6 +144,7 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
         "id": f"resp_{uuid.uuid4().hex[:16]}",
         "object": "response",
         "created_at": int(time.time()),
+        "status": "completed",
         "model": request.model,
         "output": [
             {
