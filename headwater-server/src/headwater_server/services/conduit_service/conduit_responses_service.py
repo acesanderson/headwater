@@ -23,16 +23,15 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
     from fastapi import HTTPException
     from pydantic import BaseModel as PydanticBaseModel
 
-    json_schema_format = (
-        request.text.format.json_schema
-        if request.text and request.text.format and request.text.format.type == "json_schema"
-        else None
-    )
+    fmt = request.text.format if request.text and request.text.format else None
+    json_schema_format = fmt.json_schema if fmt and fmt.type == "json_schema" else None
+    json_object_mode = fmt is not None and fmt.type == "json_object"
 
     logger.info(
-        "Responses API request: model=%s structured_output=%s",
+        "Responses API request: model=%s structured_output=%s json_object=%s",
         request.model,
         json_schema_format is not None,
+        json_object_mode,
     )
 
     # 1. Validate model
@@ -56,12 +55,13 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
     else:
         messages = []
         for msg in request.input:
+            text = msg.text()
             if msg.role == "system":
-                messages.append(SystemMessage(content=msg.content))
+                messages.append(SystemMessage(content=text))
             elif msg.role == "assistant":
-                messages.append(AssistantMessage(content=msg.content))
+                messages.append(AssistantMessage(content=text))
             else:
-                messages.append(UserMessage(content=msg.content))
+                messages.append(UserMessage(content=text))
 
     if not messages:
         raise HTTPException(status_code=400, detail="input must contain at least one message.")
@@ -74,6 +74,9 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
         params_kwargs["max_tokens"] = request.max_output_tokens
     if json_schema_format is not None:
         params_kwargs["response_model_schema"] = json_schema_format.schema_
+        params_kwargs["output_type"] = "structured_response"
+    elif json_object_mode:
+        params_kwargs["response_model_schema"] = {"type": "object"}
         params_kwargs["output_type"] = "structured_response"
 
     params = GenerationParams(**params_kwargs)
@@ -99,7 +102,7 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
     result = await model.query(gen_request)
 
     # 6. Content coercion
-    if json_schema_format is not None:
+    if json_schema_format is not None or json_object_mode:
         if result.message.parsed is not None:
             # instructor path: parsed Pydantic object
             if isinstance(result.message.parsed, PydanticBaseModel):

@@ -69,13 +69,29 @@ class OpenAIChatRequest(BaseModel):
         return self
 
 
+class ResponsesInputContentPart(BaseModel):
+    type: str
+    text: str | None = None
+
+
 class ResponsesInputMessage(BaseModel):
     role: str
-    content: str
+    content: str | list[ResponsesInputContentPart] | list[dict[str, Any]]
+
+    def text(self) -> str:
+        if isinstance(self.content, str):
+            return self.content
+        parts = []
+        for part in self.content:
+            if isinstance(part, dict):
+                parts.append(part.get("text") or "")
+            else:
+                parts.append(part.text or "")
+        return " ".join(p for p in parts if p)
 
 
 class ResponsesTextFormat(BaseModel):
-    type: Literal["json_schema", "text"]
+    type: Literal["json_schema", "json_object", "text"]
     json_schema: JsonSchemaFormat | None = None
 
 
