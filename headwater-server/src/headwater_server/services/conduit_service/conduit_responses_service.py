@@ -70,8 +70,9 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
     params_kwargs: dict = {"model": model_name}
     if request.temperature is not None:
         params_kwargs["temperature"] = request.temperature
-    if request.max_output_tokens is not None:
-        params_kwargs["max_tokens"] = request.max_output_tokens
+    # Always cap tokens: callers that don't set max_output_tokens (e.g. Firecrawl) would
+    # otherwise let a thinking model consume unlimited CoT budget before producing output.
+    params_kwargs["max_tokens"] = request.max_output_tokens if request.max_output_tokens is not None else 2048
     if json_schema_format is not None:
         params_kwargs["response_model_schema"] = json_schema_format.schema_
         params_kwargs["output_type"] = "structured_response"
