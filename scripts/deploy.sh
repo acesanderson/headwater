@@ -85,19 +85,7 @@ lasker_pull() {
     echo "==> [lasker] pulling code..."
     ssh lasker "git -C $repo pull --ff-only https://${GITHUB_PERSONAL_TOKEN}@github.com/acesanderson/headwater.git"
     echo "==> [lasker] restarting hw_log + hw_vitals..."
-    ssh lasker '
-        SOCK=$(find /run/user/1000 -name "sway-ipc*.sock" 2>/dev/null | head -1)
-        if [[ -z "$SOCK" ]]; then
-            echo "    WARNING: sway socket not found, skipping restart"
-            exit 0
-        fi
-        pkill -f "hw_log.py" 2>/dev/null || true
-        pkill -f "hw_vitals.py" 2>/dev/null || true
-        sleep 1
-        SWAYSOCK="$SOCK" swaymsg exec "foot --app-id=foot-log /home/fishhouses/.local/bin/uv run /home/fishhouses/Brian_Code/headwater/scripts/tui/hw_log.py"
-        SWAYSOCK="$SOCK" swaymsg exec "foot --app-id=foot-vitals /home/fishhouses/.local/bin/uv run /home/fishhouses/Brian_Code/headwater/scripts/tui/hw_vitals.py"
-        echo "    restarted"
-    '
+    ssh lasker "bash ~/restart_hw.sh"
 }
 
 # --- push local changes first ---
