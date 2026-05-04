@@ -81,6 +81,7 @@ async def conduit_openai_service(request: OpenAIChatRequest) -> dict:
         params_kwargs["stop"] = request.normalized_stop
     if request.response_format is not None:
         params_kwargs["response_model_schema"] = request.response_format.json_schema.schema_
+        params_kwargs["output_type"] = "structured_response"
 
     params = GenerationParams(**params_kwargs)
 
@@ -106,21 +107,26 @@ async def conduit_openai_service(request: OpenAIChatRequest) -> dict:
 
     # 7. Content coercion
     if request.response_format is not None:
-        if result.message.parsed is None:
-            logger.error("Structured output failed: parsed=None for model=%s", model_name)
-            raise HTTPException(
-                status_code=500,
-                detail="Structured output failed: instructor did not return a parsed result.",
-            )
-        if isinstance(result.message.parsed, PydanticBaseModel):
-            content = result.message.parsed.model_dump_json()
-        elif isinstance(result.message.parsed, list):
-            content = json.dumps([
-                item.model_dump() if isinstance(item, PydanticBaseModel) else item
-                for item in result.message.parsed
-            ])
+        if result.message.parsed is not None:
+            # instructor path: parsed Pydantic object
+            if isinstance(result.message.parsed, PydanticBaseModel):
+                content = result.message.parsed.model_dump_json()
+            elif isinstance(result.message.parsed, list):
+                content = json.dumps([
+                    item.model_dump() if isinstance(item, PydanticBaseModel) else item
+                    for item in result.message.parsed
+                ])
+            else:
+                content = json.dumps(result.message.parsed)
         else:
-            content = json.dumps(result.message.parsed)
+            # schema path: raw JSON string already in content
+            content = str(result.message)
+            if not content:
+                logger.error("Structured output failed: empty content for model=%s", model_name)
+                raise HTTPException(
+                    status_code=500,
+                    detail="Structured output failed: model returned empty content.",
+                )
     else:
         content = str(result.message)
         if not content and result.metadata.stop_reason != StopReason.LENGTH:
