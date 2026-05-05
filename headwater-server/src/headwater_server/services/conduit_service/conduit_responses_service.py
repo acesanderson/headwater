@@ -45,8 +45,13 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
         ) from exc
     except ValueError as exc:
         raise HTTPException(
-            status_code=400,
-            detail=f"Unrecognized model: '{request.model}'. Check ModelStore for supported models.",
+            status_code=404,
+            detail={
+                "type": "invalid_request_error",
+                "message": f"The model '{request.model}' does not exist.",
+                "param": "model",
+                "code": "model_not_found",
+            },
         ) from exc
 
     # 2. Convert input to messages

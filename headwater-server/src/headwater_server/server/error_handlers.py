@@ -9,12 +9,34 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _is_openai_path(request: Request) -> bool:
+    return request.url.path.startswith("/v1/")
+
+
+def _openai_error_body(message: str, type_: str = "invalid_request_error", param=None, code=None) -> dict:
+    return {"error": {"message": message, "type": type_, "param": param, "code": code}}
+
+
 class ErrorHandlers:
     def __init__(self, app: FastAPI):
         self.app: FastAPI = app
 
     def register_error_handlers(self):
         """Register all conduit routes"""
+
+        @self.app.exception_handler(HTTPException)
+        async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+            if _is_openai_path(request):
+                detail = exc.detail
+                if isinstance(detail, dict) and "type" in detail:
+                    body = {"error": detail}
+                else:
+                    body = _openai_error_body(str(detail) if detail else "An error occurred")
+                headers = {}
+                if exc.status_code == 401:
+                    headers["WWW-Authenticate"] = "Bearer"
+                return JSONResponse(status_code=exc.status_code, content=body, headers=headers)
+            return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
         @self.app.exception_handler(422)
         async def validation_error_handler(
@@ -54,6 +76,23 @@ class ErrorHandlers:
             request: Request, exc: RequestValidationError
         ):
             """Handle Pydantic validation errors with HeadwaterServerError"""
+
+            if _is_openai_path(request):
+                errors = exc.errors()
+                if errors:
+                    e = errors[0]
+                    loc_parts = [str(l) for l in e.get("loc", []) if l not in ("body", "query")]
+                    param = loc_parts[0] if loc_parts else None
+                    msg = e.get("msg", "Validation error")
+                    if param:
+                        msg = f"Invalid value for '{param}': {msg}"
+                else:
+                    param = None
+                    msg = "Request validation failed"
+                return JSONResponse(
+                    status_code=400,
+                    content=_openai_error_body(msg, param=param),
+                )
 
             error = HeadwaterServerError.from_validation_error(
                 exc, request, include_traceback=False

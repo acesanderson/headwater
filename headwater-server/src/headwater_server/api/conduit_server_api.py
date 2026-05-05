@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from headwater_api.classes import (
     GenerationRequest,
     GenerationResponse,
@@ -10,6 +10,19 @@ from headwater_api.classes import (
     OpenAIResponsesRequest,
     AnthropicRequest,
 )
+
+
+async def _require_auth(authorization: str | None = Header(default=None)) -> None:
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "type": "invalid_request_error",
+                "message": "No API key provided. Include 'Authorization: Bearer <key>' in the request header.",
+                "param": None,
+                "code": "no_api_key",
+            },
+        )
 
 
 class ConduitServerAPI:
@@ -61,14 +74,14 @@ class ConduitServerAPI:
             )
             return await conduit_list_models_service()
 
-        @self.app.post("/v1/chat/completions")
+        @self.app.post("/v1/chat/completions", dependencies=[Depends(_require_auth)])
         async def conduit_openai_chat(request: OpenAIChatRequest) -> dict:
             from headwater_server.services.conduit_service.conduit_openai_service import (
                 conduit_openai_service,
             )
             return await conduit_openai_service(request)
 
-        @self.app.post("/v1/responses")
+        @self.app.post("/v1/responses", dependencies=[Depends(_require_auth)])
         async def conduit_openai_responses(request: OpenAIResponsesRequest) -> dict:
             from headwater_server.services.conduit_service.conduit_responses_service import (
                 conduit_responses_service,
