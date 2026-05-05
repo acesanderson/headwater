@@ -130,3 +130,24 @@ def test_resolve_backend_returns_tuple_for_reranker_heavy(config: RouterConfig):
     """reranker + heavy model → reranker_heavy route key."""
     url, route_key = resolve_backend("reranker", "qwq:latest", config)
     assert route_key == "reranker_heavy"
+
+
+def test_conduit_embeddings_path_routes_to_backwater(config: RouterConfig):
+    """conduit/embeddings sub-path → embeddings route key → backwater."""
+    url, route_key = resolve_backend("conduit", None, config, path="conduit/embeddings")
+    assert route_key == "embeddings"
+    assert url == "http://172.16.0.9:8080"  # backwater
+
+
+def test_conduit_embeddings_quick_path_routes_to_backwater(config: RouterConfig):
+    """conduit/embeddings/quick sub-path → embeddings route key → backwater."""
+    url, route_key = resolve_backend("conduit", None, config, path="conduit/embeddings/quick")
+    assert route_key == "embeddings"
+    assert url == "http://172.16.0.9:8080"  # backwater
+
+
+def test_conduit_embeddings_path_ignores_heavy_model(config: RouterConfig):
+    """embeddings path takes priority over heavy model check."""
+    url, route_key = resolve_backend("conduit", "qwq:latest", config, path="conduit/embeddings")
+    assert route_key == "embeddings"
+    assert url == "http://172.16.0.9:8080"  # backwater
