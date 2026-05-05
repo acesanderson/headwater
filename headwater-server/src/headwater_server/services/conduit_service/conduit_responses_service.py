@@ -139,26 +139,40 @@ async def conduit_responses_service(request: OpenAIResponsesRequest) -> dict:
         result.metadata.duration,
     )
 
+    now = int(time.time())
     msg_id = f"msg_{uuid.uuid4().hex[:16]}"
     return {
         "id": f"resp_{uuid.uuid4().hex[:16]}",
         "object": "response",
-        "created_at": int(time.time()),
+        "created_at": now,
+        "completed_at": now,
         "status": "completed",
+        "error": None,
+        "incomplete_details": None,
+        "instructions": None,
         "model": request.model,
         "output": [
             {
                 "type": "message",
                 "id": msg_id,
+                "status": "completed",
                 "role": "assistant",
                 "content": [
                     {"type": "output_text", "text": content, "annotations": []}
                 ],
             }
         ],
+        "parallel_tool_calls": True,
+        "tools": [],
+        "tool_choice": "auto",
+        "temperature": request.temperature if request.temperature is not None else 1.0,
+        "top_p": 1.0,
+        "metadata": {},
         "usage": {
             "input_tokens": result.metadata.input_tokens,
+            "input_tokens_details": {"cached_tokens": 0},
             "output_tokens": result.metadata.output_tokens,
+            "output_tokens_details": {"reasoning_tokens": 0},
             "total_tokens": result.metadata.input_tokens + result.metadata.output_tokens,
         },
     }
