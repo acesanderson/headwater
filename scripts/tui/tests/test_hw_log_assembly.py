@@ -224,3 +224,49 @@ def test_subserver_ignores_non_finished_messages():
     hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
 
     assert not completed
+
+
+def test_subserver_llm_model_from_llm_call_completed():
+    """Model from llm_call_completed is associated with the request_finished row."""
+    seen: set[str] = set()
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [
+        make_entry("llm_call_started", "sub-6", {"model": "fast"}),
+        make_entry("llm_call_completed", "sub-6", {"model": "gpt-oss:latest", "duration_ms": 800.0}),
+        make_finished("sub-6", "/conduit/generate", "POST", 200, 810.0),
+    ]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert len(completed) == 1
+    assert completed[0].model == "gpt-oss:latest"
+
+
+def test_subserver_llm_model_from_batch_completed():
+    """Model from batch_completed is associated with the request_finished row."""
+    seen: set[str] = set()
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [
+        make_entry("batch_started", "sub-7", {"model": "gpt-oss:latest", "n": 5}),
+        make_entry("batch_completed", "sub-7", {"model": "gpt-oss:latest", "n": 5, "succeeded": 5, "failed": 0}),
+        make_finished("sub-7", "/conduit/batch", "POST", 200, 1200.0),
+    ]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert len(completed) == 1
+    assert completed[0].model == "gpt-oss:latest"
+
+
+def test_subserver_llm_model_not_in_seen_when_skipped():
+    """LLM log messages for a seen request_id are ignored without polluting model_by_req_id."""
+    seen: set[str] = {"sub-8"}
+    completed: list[hw_log.PendingRow] = []
+
+    entries = [
+        make_entry("llm_call_completed", "sub-8", {"model": "gpt-oss:latest"}),
+        make_finished("sub-8", "/conduit/generate", "POST", 200, 500.0),
+    ]
+    hw_log.process_subserver_entries(entries, BYWATER_URL, seen, completed)
+
+    assert not completed

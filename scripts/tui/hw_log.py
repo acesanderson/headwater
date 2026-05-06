@@ -49,6 +49,7 @@ INTERNAL_PREFIXES = frozenset([
     "/ping", "/status", "/metrics", "/logs/last", "/routes", "/gpu", "/sysinfo",
 ])
 SPECIAL_ROUTES = frozenset(["heavy_inference", "ambient_inference", "reranker_heavy"])
+LLM_MODEL_MESSAGES = frozenset(["llm_call_started", "llm_call_completed", "llm_call_length_truncated", "batch_started", "batch_completed"])
 
 GREEN  = "#4ec9b0"
 AMBER  = "#e8c07d"
@@ -227,6 +228,19 @@ def process_subserver_entries(
     `seen` after process_entries() runs. We skip those and only emit rows for
     requests that arrived at the subserver directly.
     """
+    # Collect LLM model from structured log messages keyed by request_id.
+    # Services like conduit_generate and conduit_batch log model in extra for
+    # llm_call_started/completed and batch_started/completed respectively.
+    # request_finished doesn't carry model unless request.state.model is set.
+    model_by_req_id: dict[str, str] = {}
+    for entry in entries:
+        if entry.get("message") not in LLM_MODEL_MESSAGES:
+            continue
+        req_id = entry.get("request_id")
+        extra = entry.get("extra") or {}
+        if req_id and extra.get("model"):
+            model_by_req_id[req_id] = extra["model"]
+
     for entry in entries:
         if entry.get("message") != "request_finished":
             continue
@@ -237,12 +251,13 @@ def process_subserver_entries(
         path = "/" + extra.get("path", "").lstrip("/")
         if is_internal_path(path):
             continue
+        model = extra.get("model") or (model_by_req_id.get(req_id) if req_id else None)
         completed.append(PendingRow(
             timestamp=entry["timestamp"],
             path=path,
             service=path.lstrip("/").split("/")[0],
             backend=backend_url,
-            model=extra.get("model"),
+            model=model,
             route=None,
             upstream_status=extra.get("status_code"),
             method=extra.get("method"),
