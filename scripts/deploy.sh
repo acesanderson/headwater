@@ -86,6 +86,8 @@ lasker_pull() {
     ssh lasker "git -C $repo pull --ff-only https://${GITHUB_PERSONAL_TOKEN}@github.com/acesanderson/headwater.git"
     echo "==> [lasker] restarting hw_log + hw_vitals..."
     ssh lasker "bash $repo/scripts/lasker/restart_hw.sh"
+    echo "==> [lasker] restarting headwater-dash..."
+    ssh lasker "sudo systemctl restart headwater-dash"
 }
 
 # --- push local changes first ---
