@@ -50,6 +50,7 @@ class HeadwaterServerAPI:
         @self.app.get("/logs/last", response_model=LogsLastResponse)
         def logs_last(n: int = Query(default=50, ge=1)):
             from headwater_server.server.logging_config import ring_buffer
+
             return ring_buffer.get_response(n)
 
         unit = server_name.split()[0].lower()  # "Bywater API Server" -> "bywater"
@@ -57,6 +58,7 @@ class HeadwaterServerAPI:
         @self.app.get("/logs/journal")
         def logs_journal(n: int = Query(default=100, ge=1)):
             import subprocess
+
             try:
                 result = subprocess.run(
                     ["/usr/bin/journalctl", "-u", unit, "-n", str(n), "--no-pager"],
@@ -67,16 +69,34 @@ class HeadwaterServerAPI:
                 lines = result.stdout.splitlines()
                 return {"unit": unit, "n_requested": n, "lines": lines}
             except FileNotFoundError:
-                return {"unit": unit, "n_requested": n, "lines": [], "error": "journalctl not available"}
+                return {
+                    "unit": unit,
+                    "n_requested": n,
+                    "lines": [],
+                    "error": "journalctl not available",
+                }
             except subprocess.TimeoutExpired:
-                return {"unit": unit, "n_requested": n, "lines": [], "error": "journalctl timed out"}
+                return {
+                    "unit": unit,
+                    "n_requested": n,
+                    "lines": [],
+                    "error": "journalctl timed out",
+                }
 
         @self.app.get("/sysinfo")
         async def sysinfo():
-            from headwater_server.services.status_service.sysinfo_service import get_sysinfo_service
+            from headwater_server.services.status_service.sysinfo_service import (
+                get_sysinfo_service,
+            )
+
             return await get_sysinfo_service()
 
         @self.app.get("/gpu", response_model=GpuResponse)
         async def gpu():
             from headwater_server.services.gpu_service.get_gpu import get_gpu_service
+
             return await get_gpu_service(server_name)
+
+        @self.app.get("/health")
+        async def health():
+            return {"status": "ok"}

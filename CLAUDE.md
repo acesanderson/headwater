@@ -106,3 +106,33 @@ headwater/
 ```
 
 Local dependencies (conduit, dbclients, siphon) are installed as editable sources in `headwater-server/.venv`. If you add a new local dep, run `deploy.sh --sync-deps`.
+
+---
+
+## GPU Hosts — Compute Notes
+
+| Host | GPU | VRAM | Key constraint |
+|---|---|---|---|
+| alphablue | RTX 4090 Mobile | 16 GB | `deepwater` runs here; heavy inference + Docker workers |
+| botvinnik | ~3.6 GB GPU | 3.6 GB | Very limited — keep batch_size=4, _MAX_EMBED_CHARS=2000 to avoid OOM |
+
+Botvinnik runs `backwater`. Keep batch sizes small for any embedding calls routed there.
+
+---
+
+## Backend Topology (routes.yaml)
+
+4 registered backends:
+- `bywater` — caruana :8080 (primary workhorse)
+- `deepwater` — alphablue :8080 (GPU-heavy tasks)
+- `backwater` — botvinnik :8080 (embeddings, secondary)
+- `stillwater` — reserved / not currently active
+
+Heavy models (`heavy_models` list in routes.yaml) are automatically pinned to `deepwater`.
+
+---
+
+## Lasker — Observability Host
+
+Lasker (172.16.0.5) runs: `hw_log` (log ingest), `hw_vitals` (metrics), `headwater-dash` (observability dashboard).
+Connect: `fishhouses@lasker` (SSH port 2228).

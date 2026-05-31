@@ -16,7 +16,12 @@ import headwater_server.server.logging_config  # noqa: F401
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import JSONResponse
 
-from headwater_api.classes import StatusResponse, LogsLastResponse, GpuResponse, RouterGpuResponse
+from headwater_api.classes import (
+    StatusResponse,
+    LogsLastResponse,
+    GpuResponse,
+    RouterGpuResponse,
+)
 from headwater_server.server.routing_config import (
     RouterConfig,
     RoutingError,
@@ -30,10 +35,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-HOP_BY_HOP = frozenset({
-    "connection", "transfer-encoding", "te", "trailer",
-    "upgrade", "keep-alive", "proxy-authorization", "proxy-authenticate",
-})
+HOP_BY_HOP = frozenset(
+    {
+        "connection",
+        "transfer-encoding",
+        "te",
+        "trailer",
+        "upgrade",
+        "keep-alive",
+        "proxy-authorization",
+        "proxy-authenticate",
+    }
+)
 
 
 class HeadwaterRouter:
@@ -70,14 +83,23 @@ class HeadwaterRouter:
         @self.app.get("/logs/last", response_model=LogsLastResponse)
         def logs_last(n: int = Query(default=50, ge=1)) -> LogsLastResponse:
             from headwater_server.server.logging_config import ring_buffer
+
             return ring_buffer.get_response(n)
 
         @self.app.get("/logs/journal")
         def logs_journal(n: int = Query(default=100, ge=1)) -> dict:
             import subprocess
+
             try:
                 result = subprocess.run(
-                    ["/usr/bin/journalctl", "-u", "headwaterrouter", "-n", str(n), "--no-pager"],
+                    [
+                        "/usr/bin/journalctl",
+                        "-u",
+                        "headwaterrouter",
+                        "-n",
+                        str(n),
+                        "--no-pager",
+                    ],
                     capture_output=True,
                     text=True,
                     timeout=10,
@@ -85,13 +107,26 @@ class HeadwaterRouter:
                 lines = result.stdout.splitlines()
                 return {"unit": "headwaterrouter", "n_requested": n, "lines": lines}
             except FileNotFoundError:
-                return {"unit": "headwaterrouter", "n_requested": n, "lines": [], "error": "journalctl not available"}
+                return {
+                    "unit": "headwaterrouter",
+                    "n_requested": n,
+                    "lines": [],
+                    "error": "journalctl not available",
+                }
             except subprocess.TimeoutExpired:
-                return {"unit": "headwaterrouter", "n_requested": n, "lines": [], "error": "journalctl timed out"}
+                return {
+                    "unit": "headwaterrouter",
+                    "n_requested": n,
+                    "lines": [],
+                    "error": "journalctl timed out",
+                }
 
         @self.app.get("/status", response_model=StatusResponse)
         async def status() -> StatusResponse:
-            from headwater_server.services.status_service.get_status import get_status_service
+            from headwater_server.services.status_service.get_status import (
+                get_status_service,
+            )
+
             return await get_status_service(startup_time, server_name=server_name)
 
         @self.app.get("/routes/")
@@ -107,7 +142,9 @@ class HeadwaterRouter:
         async def gpu() -> RouterGpuResponse:
             import asyncio
 
-            async def fetch_backend_gpu(name: str, base_url: str) -> tuple[str, GpuResponse]:
+            async def fetch_backend_gpu(
+                name: str, base_url: str
+            ) -> tuple[str, GpuResponse]:
                 try:
                     async with httpx.AsyncClient(timeout=10.0) as client:
                         resp = await client.get(f"{base_url}/gpu")
@@ -126,6 +163,10 @@ class HeadwaterRouter:
             )
             return RouterGpuResponse(backends=dict(results))
 
+        @self.app.get("/health")
+        async def health():
+            return {"status": "ok"}
+
         @self.app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
         async def proxy(request: Request, path: str) -> Response:
             service = path.split("/")[0]
@@ -136,12 +177,15 @@ class HeadwaterRouter:
                 try:
                     parsed = json.loads(body)
                     # Top-level "model" (OpenAI-style) or nested under "params" (GenerationRequest/BatchRequest)
-                    model = parsed.get("model") or (parsed.get("params") or {}).get("model")
+                    model = parsed.get("model") or (parsed.get("params") or {}).get(
+                        "model"
+                    )
                 except Exception:
                     pass
 
             try:
                 from headwater_server.server.routing_config import resolve_backend
+
                 backend_url, route_key = resolve_backend(service, model, config, path)
             except RoutingError as exc:
                 error = HeadwaterServerError(
@@ -152,11 +196,12 @@ class HeadwaterRouter:
                     method=request.method,
                     request_id=request.state.request_id,
                 )
-                return JSONResponse(status_code=400, content=error.model_dump(mode="json"))
+                return JSONResponse(
+                    status_code=400, content=error.model_dump(mode="json")
+                )
 
             forward_headers = {
-                k: v for k, v in request.headers.items()
-                if k.lower() not in HOP_BY_HOP
+                k: v for k, v in request.headers.items() if k.lower() not in HOP_BY_HOP
             }
             forward_headers["x-request-id"] = request.state.request_id
 
@@ -218,7 +263,9 @@ class HeadwaterRouter:
                         request_id=request.state.request_id,
                         context={"backend": attempt_url},
                     )
-                    return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
+                    return JSONResponse(
+                        status_code=503, content=error.model_dump(mode="json")
+                    )
 
             if upstream is None:
                 logger.error(
@@ -238,7 +285,9 @@ class HeadwaterRouter:
                     request_id=request.state.request_id,
                     context={"backends_tried": backends_to_try},
                 )
-                return JSONResponse(status_code=503, content=error.model_dump(mode="json"))
+                return JSONResponse(
+                    status_code=503, content=error.model_dump(mode="json")
+                )
 
             logger.debug(
                 "proxy_response",
@@ -252,13 +301,16 @@ class HeadwaterRouter:
             )
 
             response_headers = {
-                k: v for k, v in upstream.headers.items()
-                if k.lower() not in HOP_BY_HOP
+                k: v for k, v in upstream.headers.items() if k.lower() not in HOP_BY_HOP
             }
             if backend_url != backends_to_try[0]:
                 url_to_name = {v: k for k, v in config.backends.items()}
-                response_headers["X-Headwater-Routed-Via"] = url_to_name.get(backend_url, backend_url)
-                response_headers["X-Headwater-Primary-Backend"] = url_to_name.get(backends_to_try[0], backends_to_try[0])
+                response_headers["X-Headwater-Routed-Via"] = url_to_name.get(
+                    backend_url, backend_url
+                )
+                response_headers["X-Headwater-Primary-Backend"] = url_to_name.get(
+                    backends_to_try[0], backends_to_try[0]
+                )
             return Response(
                 content=upstream.content,
                 status_code=upstream.status_code,
@@ -267,7 +319,9 @@ class HeadwaterRouter:
 
     def _register_middleware(self) -> None:
         @self.app.middleware("http")
-        async def correlation_middleware(request: Request, call_next: Callable) -> Response:
+        async def correlation_middleware(
+            request: Request, call_next: Callable
+        ) -> Response:
             header_value = request.headers.get("X-Request-ID", "")
             try:
                 parsed = uuid.UUID(header_value)
@@ -310,4 +364,5 @@ except FileNotFoundError:
 
 if _router is not None:
     from headwater_server.server.metrics import register_router_metrics
+
     register_router_metrics(_router.app, _router._name, _router._config)

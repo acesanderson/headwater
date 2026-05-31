@@ -1,7 +1,28 @@
 {
   "permissions": {
     "allow": [
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater add headwater-server/src/headwater_server/api/reranker_server_api.py)",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"feat\\(reranker\\): set request.state.model for TUI model column\")",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater add scripts/tui/hw_log.py)",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"feat\\(tui\\): strip provider prefix from model names; widen MODEL column\")",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"fix\\(tui\\): normalize paths to leading slash; bump ping timeout to 2s\")",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"feat\\(tui\\): [b] keybind fires blast from within the dashboard\")",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"fix\\(tui\\): use os.read for cbreak input; resolve uv path with shutil.which\")",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"fix\\(tui\\): move keyboard input to main thread with select; drop threading approach\")",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"fix\\(tui\\): tty.cbreak -> tty.setcbreak \\(renamed in Python 3.12\\)\")",
+      "Bash(tmux list-windows *)",
+      "Bash(tmux capture-pane *)",
+      "Bash(tmux send-keys *)",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"fix\\(tui\\): add --script flag to uv run for blast subprocess\")",
+      "Bash(git -C /Users/bianders/Brian_Code/headwater commit -m \"fix\\(tui\\): apply setcbreak after Live.__enter__ to avoid alt-screen tty reset\")",
+      "Bash(git *)",
+      "Bash(curl -s \"http://172.16.0.4:8080/sysinfo\")",
+      "Bash(curl -s \"http://172.16.0.4:8080/gpu\")",
+      "Bash(tmux display-message *)",
+      "Bash(curl -s \"http://172.16.0.3:8080/gpu\")",
+      "Bash(tmux list-panes *)",
+      "Bash(tmux show-buffer *)"
     ]
   }
 }
