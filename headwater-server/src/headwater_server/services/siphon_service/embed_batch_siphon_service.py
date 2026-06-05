@@ -5,6 +5,7 @@ import logging
 from functools import lru_cache
 
 from headwater_api.classes import EmbedBatchRequest, EmbedBatchResponse, SIPHON_EMBED_MODEL
+from headwater_api.classes.siphon_classes.requests import SIPHON_EMBED_MODEL_V2
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +23,38 @@ def _get_embedding_model(model_name: str):
     return EmbeddingModel(model_name)
 
 
+def _fetch_source_artifact(
+    repository, uris: list[str], model_name: str, skip_existing: bool
+) -> tuple[dict[str, str], int]:
+    """Pick the source artifact (text to embed) based on the embedding model.
+
+    v1 (all-MiniLM): concat of (title, summary). Legacy production path.
+    v2 (nomic-embed): the HyDE-shaped description column on its own. Bounded
+    input (~150 words) so even 256-token-cap models would fit, but nomic's
+    8K cap leaves plenty of headroom.
+
+    Returns ({uri: text_to_embed}, count_skipped_empty).
+    """
+    if model_name == SIPHON_EMBED_MODEL_V2:
+        descriptions = repository.get_embed_descriptions(uris, skip_existing=skip_existing)
+        return descriptions, 0  # caller still filters empty strings below
+
+    # v1 / legacy path. Same behavior as before.
+    embed_texts = repository.get_embed_texts(uris, skip_existing=skip_existing)
+    return {
+        uri: f"{title}\n{summary}".strip()
+        for uri, (title, summary) in embed_texts.items()
+    }, 0
+
+
 async def embed_batch_siphon_service(request: EmbedBatchRequest) -> EmbedBatchResponse:
     """Batch-embed siphon records by URI.
 
     Workflow:
-    1. Fetch (title, summary) from DB for requested URIs (skips already-embedded
-       unless force=True).
-    2. Filter URIs where title+summary is empty — counted as skipped.
+    1. Fetch the source artifact (text to embed) per the requested model:
+       v1 uses (title, summary) concat; v2 uses the description column. See
+       `_fetch_source_artifact`.
+    2. Filter URIs where the text is empty — counted as skipped.
     3. Encode non-empty texts in chunks of _CHUNK_SIZE using run_in_executor so
        the event loop stays free (encode is CPU/GPU-bound).
     4. Write vectors back to DB in the same chunk, one transaction per chunk.
@@ -39,13 +65,14 @@ async def embed_batch_siphon_service(request: EmbedBatchRequest) -> EmbedBatchRe
     model_name = request.model
     skip_existing = not request.force
 
-    embed_texts = repository.get_embed_texts(request.uris, skip_existing=skip_existing)
+    artifacts, _ = _fetch_source_artifact(
+        repository, request.uris, model_name, skip_existing
+    )
 
     to_embed: list[tuple[str, str]] = []
-    skipped = len(request.uris) - len(embed_texts)  # URIs not in DB or already embedded
+    skipped = len(request.uris) - len(artifacts)  # URIs not in DB or already embedded
 
-    for uri, (title, summary) in embed_texts.items():
-        text = f"{title}\n{summary}".strip()
+    for uri, text in artifacts.items():
         if not text:
             skipped += 1
         else:
