@@ -43,7 +43,26 @@ class EmbeddingModel:
             trust_remote_code=model_name in _TRUST_REMOTE_CODE_MODELS,
         )
 
+        self._apply_runtime_limits(model_name)
+
         self.embedding_function: EmbeddingFunction = self._get_handler(model_name)
+
+    def _apply_runtime_limits(self, model_name: str) -> None:
+        """Cap per-model runtime parameters to fit the embeddings host envelope.
+
+        Embeddings route to backwater (botvinnik, GTX 1650 Ti Mobile, 3.63 GB
+        VRAM) per routes.yaml. Attention memory is O(seq_len^2), so capping
+        max_seq_length below the model's native window is high-leverage.
+
+        Callers do not need to know about these limits — server-side internal
+        batching (see per-model handlers) makes any incoming payload safe.
+        See docs/backwater_limits.md for the full constraint analysis.
+        """
+        if model_name == "nomic-ai/nomic-embed-text-v1.5":
+            # Capped from native 2048 to 1024. Typical embedded content is
+            # under 200 tokens (Siphon descriptions, most Obsidian notes);
+            # 1024 catches the long tail without OOM risk on backwater.
+            self._st_model.max_seq_length = 1024
 
     def _get_handler(self, model_name: str) -> EmbeddingFunction:
         match model_name:
@@ -99,8 +118,13 @@ class EmbeddingModel:
     def _nomic_handler(
         self, documents: list[str], prompt: str | None = None
     ) -> list[list[float]]:
-        # Nomic uses a 2048-token context window; reduce GPU batch size to avoid OOM.
-        kwargs: dict = {"batch_size": 32, "convert_to_tensor": False}
+        # batch_size=8 sized for backwater (botvinnik, GTX 1650 Ti Mobile,
+        # 3.63 GB VRAM). Attention at batch=8 x seq=1024 = ~400 MB; leaves
+        # headroom for concurrent callers (siphon + blackglass). Callers
+        # may send larger payloads via /conduit/embeddings; SentenceTransformer
+        # chunks them internally per this batch_size. max_seq_length is
+        # capped to 1024 in __init__ via _apply_runtime_limits.
+        kwargs: dict = {"batch_size": 8, "convert_to_tensor": False}
         if prompt is not None:
             kwargs["prompt"] = prompt
         return self._st_model.encode(documents, **kwargs).tolist()
