@@ -19,7 +19,7 @@ hosts = {
     "botvinnik": "backwater",
     "spassky": "stillwater",
 }
-servers = Literal["deepwater", "bywater", "backwater"]
+servers = Literal["deepwater", "bywater", "backwater", "stillwater"]
 
 
 def run_server(server: servers):

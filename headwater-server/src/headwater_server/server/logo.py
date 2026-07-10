@@ -80,6 +80,8 @@ def print_logo(
         print_backwater_logo()
     elif mode == "headwater":
         print_headwater_logo()
+    elif mode == "stillwater":
+        print_stillwater_logo()
 
 
 if __name__ == "__main__":
