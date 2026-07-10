@@ -17,6 +17,7 @@ hosts = {
     "alphablue": "deepwater",
     "caruana": "bywater",
     "botvinnik": "backwater",
+    "spassky": "stillwater",
 }
 servers = Literal["deepwater", "bywater", "backwater"]
 
